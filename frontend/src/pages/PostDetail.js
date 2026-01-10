@@ -43,8 +43,9 @@ function PostDetail() {
   const fetchComments = useCallback(async () => {
     try {
       const response = await postAPI.getPostComments(id);
+      console.log('Comments response:', response.data); // Debug
       if (response.data.success) {
-        setComments(response.data.comments || []);
+        setComments(response.data.comments || response.data.data?.comments || []);
       }
     } catch (error) {
       console.error('Failed to fetch comments:', error);
@@ -53,70 +54,27 @@ function PostDetail() {
     }
   }, [id]);
 
-  // Fungsi untuk check subscription menggunakan endpoint yang tersedia
-  const checkSubscription = useCallback(async (creatorId) => {
-    if (!user || !creatorId) return false;
-    
-    try {
-      // Coba cek subscription status ke creator tertentu
-      const response = await subscriptionAPI.checkSubscriptionStatus(creatorId);
-      return response.data.isSubscribed || false;
-    } catch (error) {
-      console.log('Check subscription status failed:', error.message);
-      
-      // Fallback: cek dari list subscriptions user
-      try {
-        const subscriptionsResponse = await subscriptionAPI.getMySubscriptions();
-        const subscriptions = subscriptionsResponse.data.subscriptions || subscriptionsResponse.data.data || [];
-        
-        // Cek apakah user subscribe ke creator ini
-        return subscriptions.some(sub => 
-          sub.creatorId === creatorId || 
-          sub.creator_id === creatorId ||
-          (sub.creator && sub.creator.id === creatorId)
-        );
-      } catch (subError) {
-        console.log('Get my subscriptions also failed:', subError.message);
-        return false;
-      }
-    }
-  }, [user]);
-
   const fetchPost = useCallback(async () => {
     try {
       setLoading(true);
       setCheckingAccess(true);
       
-      // Fetch post data first
+      // Fetch post data
       const response = await postAPI.getPostById(id);
+      console.log('Post response:', response.data); // Debug
       
-      // Handle different response structures
-      let postData = null;
-      let creatorData = null;
-      
-      if (response.data) {
-        // Cek berbagai kemungkinan struktur response
-        if (response.data.post) {
-          postData = response.data.post;
-        } else if (response.data.data && response.data.data.post) {
-          postData = response.data.data.post;
-        } else if (response.data.id) {
-          postData = response.data; // Jika response langsung post object
-        }
-        
-        if (response.data.creator) {
-          creatorData = response.data.creator;
-        } else if (response.data.data && response.data.data.creator) {
-          creatorData = response.data.data.creator;
-        } else if (postData && postData.creator) {
-          creatorData = postData.creator;
-        } else if (postData && postData.creatorId && response.data.user) {
-          creatorData = response.data.user; // Jika creator ada di user field
-        }
+      if (!response.data.success) {
+        toast.error('Post not found');
+        navigate('/');
+        return;
       }
+
+      // Extract data dari response yang benar
+      const postData = response.data.data?.post || response.data.post;
+      const creatorData = response.data.data?.creator || response.data.creator;
       
       if (!postData) {
-        toast.error('Post not found');
+        toast.error('Post data not found');
         navigate('/');
         return;
       }
@@ -124,88 +82,90 @@ function PostDetail() {
       setPost(postData);
       setCreator(creatorData);
       
-      // Set basic counts for preview
+      // Set like and comment counts
       setLikeCount(postData.likes_count || postData.likesCount || 0);
       setCommentCount(postData.comments_count || postData.commentsCount || 0);
       
-      // Check access based on post visibility
+      // Check if user has liked the post
+      if (user && postData.likes && Array.isArray(postData.likes)) {
+        setLiked(postData.likes.includes(user.id));
+      }
+      
+      // Check if user has bookmarked
+      if (user && postData.bookmarks && Array.isArray(postData.bookmarks)) {
+        setBookmarked(postData.bookmarks.includes(user.id));
+      }
+      
+      // Check access
       let accessGranted = false;
       let subscriptionStatus = false;
       
-      // 1. Jika post public, semua orang punya akses
-      if (postData.visibility === 'public') {
-        accessGranted = true;
-        // Check subscription status hanya untuk badge UI
-        if (user && creatorData && creatorData.id) {
-          subscriptionStatus = await checkSubscription(creatorData.id);
-        }
-      }
-      // 2. Jika user adalah creator post
-      else if (user && creatorData && user.id === creatorData.id) {
+      // If user is creator of the post, always have access
+      if (user && user.id === postData.creatorId) {
         accessGranted = true;
         subscriptionStatus = true;
+      } 
+      // If post is public
+      else if (postData.visibility === 'public') {
+        accessGranted = true;
+        // Check subscription status for UI badge
+        if (user && creatorData?.id) {
+          try {
+            const subResponse = await subscriptionAPI.checkSubscriptionStatus(creatorData.id);
+            subscriptionStatus = subResponse.data.isSubscribed || false;
+          } catch (subError) {
+            console.log('Subscription check failed');
+          }
+        }
       }
-      // 3. Untuk post subscribers_only
+      // For subscribers_only posts
       else if (postData.visibility === 'subscribers_only') {
         if (!user) {
           accessGranted = false;
-          subscriptionStatus = false;
-        } else if (creatorData && creatorData.id) {
-          // Check subscription status
-          subscriptionStatus = await checkSubscription(creatorData.id);
-          accessGranted = subscriptionStatus;
         } else {
-          accessGranted = false;
-          subscriptionStatus = false;
+          try {
+            // Check subscription access
+            const accessResponse = await subscriptionAPI.checkSubscriptionStatus(creatorData.id);
+            accessGranted = accessResponse.data.isSubscribed || false;
+            subscriptionStatus = accessGranted;
+          } catch (accessError) {
+            console.log('Access check failed:', accessError.message);
+            accessGranted = false;
+          }
         }
-      }
-      // 4. Default: tidak ada akses
-      else {
-        accessGranted = false;
       }
       
       setHasAccess(accessGranted);
       setIsSubscribed(subscriptionStatus);
       
-      // If access is granted, fetch additional data
+      // If access is granted, fetch comments
       if (accessGranted) {
-        // Check if user has liked the post
-        if (user && postData.likes && Array.isArray(postData.likes)) {
-          setLiked(postData.likes.includes(user.id));
-        }
-        
-        // Check if user has bookmarked
-        if (user && postData.bookmarks && Array.isArray(postData.bookmarks)) {
-          setBookmarked(postData.bookmarks.includes(user.id));
-        }
-        
-        // Fetch comments
         await fetchComments();
       }
       
     } catch (error) {
       console.error('Fetch post error:', error);
       
-      // Handle 403 or 404 errors
-      if (error.response?.status === 403 || error.response?.status === 404) {
+      // If 403, it's a subscribers-only post
+      if (error.response?.status === 403) {
         setHasAccess(false);
-        // Try to get basic post info for preview
+        // Fetch creator info for subscribe button
         try {
           const postResponse = await postAPI.getPostById(id);
-          if (postResponse.data) {
-            let postData = postResponse.data.post || postResponse.data.data?.post || postResponse.data;
-            let creatorData = postResponse.data.creator || postResponse.data.data?.creator;
-            
-            if (postData) {
-              setPost(postData);
-              setCreator(creatorData);
-              setLikeCount(postData.likes_count || postData.likesCount || 0);
-              setCommentCount(postData.comments_count || postData.commentsCount || 0);
-            }
+          if (postResponse.data.success) {
+            const postData = postResponse.data.data?.post || postResponse.data.post;
+            const creatorData = postResponse.data.data?.creator || postResponse.data.creator;
+            setPost(postData);
+            setCreator(creatorData);
+            setLikeCount(postData.likes_count || postData.likesCount || 0);
+            setCommentCount(postData.comments_count || postData.commentsCount || 0);
           }
         } catch (err) {
-          console.log('Could not fetch post info');
+          console.log('Could not fetch creator info');
         }
+      } else if (error.response?.status === 404) {
+        toast.error('Post not found');
+        navigate('/');
       } else {
         toast.error('Failed to load post');
       }
@@ -213,7 +173,7 @@ function PostDetail() {
       setLoading(false);
       setCheckingAccess(false);
     }
-  }, [id, user, navigate, fetchComments, checkSubscription]);
+  }, [id, user, navigate, fetchComments]);
 
   useEffect(() => {
     if (id) {
@@ -265,10 +225,11 @@ function PostDetail() {
 
     try {
       if (bookmarked) {
-        // Untuk sementara, kita simpan bookmark di local state
+        // Call remove bookmark API
         setBookmarked(false);
         toast.success('Removed from bookmarks');
       } else {
+        // Call add bookmark API
         setBookmarked(true);
         toast.success('Added to bookmarks');
       }
@@ -359,9 +320,9 @@ function PostDetail() {
 
     try {
       setCheckingAccess(true);
-      const subscribed = await checkSubscription(creator.id);
+      const subscribed = await subscriptionAPI.checkSubscriptionStatus(creator.id);
       
-      if (subscribed) {
+      if (subscribed.data.isSubscribed) {
         setHasAccess(true);
         setIsSubscribed(true);
         // Refresh post data
@@ -407,6 +368,37 @@ function PostDetail() {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return formatDate(dateString);
+  };
+
+  // Get media URLs - debug function
+  const getMediaUrls = () => {
+    if (!post) {
+      console.log('Post is null');
+      return [];
+    }
+    
+    console.log('Post data for media:', post);
+    
+    // Coba berbagai kemungkinan field media
+    if (post.media_urls && Array.isArray(post.media_urls) && post.media_urls.length > 0) {
+      console.log('Found media_urls:', post.media_urls);
+      return post.media_urls;
+    }
+    if (post.mediaUrls && Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0) {
+      console.log('Found mediaUrls:', post.mediaUrls);
+      return post.mediaUrls;
+    }
+    if (post.media_url) {
+      console.log('Found media_url:', post.media_url);
+      return [post.media_url];
+    }
+    if (post.mediaUrl) {
+      console.log('Found mediaUrl:', post.mediaUrl);
+      return [post.mediaUrl];
+    }
+    
+    console.log('No media found in post');
+    return [];
   };
 
   // Loading state
@@ -549,30 +541,6 @@ function PostDetail() {
     );
   }
 
-  // Get media URL - handle berbagai format
-  const getMediaUrls = () => {
-    if (!post) return [];
-    
-    // Coba berbagai kemungkinan field media
-    if (post.media_urls && Array.isArray(post.media_urls) && post.media_urls.length > 0) {
-      return post.media_urls;
-    }
-    if (post.mediaUrls && Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0) {
-      return post.mediaUrls;
-    }
-    if (post.media_url) {
-      return [post.media_url];
-    }
-    if (post.mediaUrl) {
-      return [post.mediaUrl];
-    }
-    if (post.thumbnail) {
-      return [post.thumbnail];
-    }
-    
-    return [];
-  };
-
   const mediaUrls = getMediaUrls();
 
   return (
@@ -674,9 +642,60 @@ function PostDetail() {
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Post Stats */}
-              <div className="flex items-center justify-between pt-6 border-t">
+            {/* Post Content */}
+            <div className="bg-white rounded-xl shadow-md p-6 md:p-8 mb-8">
+              {/* Excerpt */}
+              {post.excerpt && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 mb-8 rounded-r-lg">
+                  <p className="text-lg font-medium text-gray-800">"{post.excerpt}"</p>
+                </div>
+              )}
+
+              {/* Media Display */}
+              {mediaUrls.length > 0 ? (
+                <div className="mb-8">
+                  {post.type === 'video' ? (
+                    <div className="w-full bg-black rounded-xl overflow-hidden shadow-xl mb-4">
+                      <video 
+                        src={mediaUrls[0]} 
+                        controls 
+                        className="w-full h-auto max-h-[70vh]"
+                        controlsList="nodownload"
+                        preload="metadata"
+                      >
+                        Your browser does not support the video tag.
+                        <source src={mediaUrls[0]} type="video/mp4" />
+                      </video>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {mediaUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={url}
+                            alt={`Post media ${index + 1}`}
+                            className="rounded-xl shadow-md w-full h-auto object-cover max-h-[70vh]"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition duration-200 rounded-xl"></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mb-8 bg-gray-100 rounded-xl p-12 text-center">
+                  <p className="text-gray-500">No media available</p>
+                </div>
+              )}
+
+              {/* Action Buttons - DIBAWAH VIDEO */}
+              <div className="flex items-center justify-between pt-6 border-t mb-8">
                 <div className="flex items-center space-x-6">
                   <button
                     onClick={handleLike}
@@ -726,55 +745,6 @@ function PostDetail() {
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Post Content */}
-            <div className="bg-white rounded-xl shadow-md p-6 md:p-8 mb-8">
-              {/* Excerpt */}
-              {post.excerpt && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 mb-8 rounded-r-lg">
-                  <p className="text-lg font-medium text-gray-800">"{post.excerpt}"</p>
-                </div>
-              )}
-
-              {/* Media Display */}
-              {mediaUrls.length > 0 && (
-                <div className="mb-8">
-                  {post.type === 'video' ? (
-                    <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-xl">
-                      <div className="aspect-w-16 aspect-h-9">
-                        <video 
-                          src={mediaUrls[0]} 
-                          controls 
-                          className="w-full h-full object-contain"
-                          controlsList="nodownload"
-                          preload="metadata"
-                        >
-                          Your browser does not support the video tag.
-                          <source src={mediaUrls[0]} type="video/mp4" />
-                        </video>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {mediaUrls.map((url, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={url}
-                            alt={`Post media ${index + 1}`}
-                            className="rounded-xl shadow-md w-full h-auto object-cover max-h-[70vh]"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition duration-200 rounded-xl"></div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Content */}
               <div className="prose prose-lg max-w-none">
@@ -855,10 +825,10 @@ function PostDetail() {
                     <div key={comment.id} className="flex space-x-3">
                       <div className="flex-shrink-0">
                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          {comment.user?.avatar ? (
+                          {comment.user?.avatar_url || comment.user?.avatar ? (
                             <img 
-                              src={comment.user.avatar} 
-                              alt={comment.user.name}
+                              src={comment.user.avatar_url || comment.user.avatar} 
+                              alt={comment.user?.name}
                               className="w-10 h-10 rounded-full object-cover"
                             />
                           ) : (
