@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+// eslint-disable-next-line
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { postAPI, subscriptionAPI } from '../services/api';
@@ -43,13 +44,11 @@ function PostDetail() {
   const fetchComments = useCallback(async () => {
     try {
       const response = await postAPI.getPostComments(id);
-      console.log('Comments response:', response.data); // Debug
       if (response.data.success) {
         setComments(response.data.comments || response.data.data?.comments || []);
       }
     } catch (error) {
       console.error('Failed to fetch comments:', error);
-      // Tetap set comments kosong jika error
       setComments([]);
     }
   }, [id]);
@@ -59,9 +58,7 @@ function PostDetail() {
       setLoading(true);
       setCheckingAccess(true);
       
-      // Fetch post data
       const response = await postAPI.getPostById(id);
-      console.log('Post response:', response.data); // Debug
       
       if (!response.data.success) {
         toast.error('Post not found');
@@ -69,7 +66,6 @@ function PostDetail() {
         return;
       }
 
-      // Extract data dari response yang benar
       const postData = response.data.data?.post || response.data.post;
       const creatorData = response.data.data?.creator || response.data.creator;
       
@@ -82,33 +78,25 @@ function PostDetail() {
       setPost(postData);
       setCreator(creatorData);
       
-      // Set like and comment counts
       setLikeCount(postData.likes_count || postData.likesCount || 0);
       setCommentCount(postData.comments_count || postData.commentsCount || 0);
       
-      // Check if user has liked the post
       if (user && postData.likes && Array.isArray(postData.likes)) {
         setLiked(postData.likes.includes(user.id));
       }
       
-      // Check if user has bookmarked
       if (user && postData.bookmarks && Array.isArray(postData.bookmarks)) {
         setBookmarked(postData.bookmarks.includes(user.id));
       }
       
-      // Check access
       let accessGranted = false;
       let subscriptionStatus = false;
       
-      // If user is creator of the post, always have access
       if (user && user.id === postData.creatorId) {
         accessGranted = true;
         subscriptionStatus = true;
-      } 
-      // If post is public
-      else if (postData.visibility === 'public') {
+      } else if (postData.visibility === 'public') {
         accessGranted = true;
-        // Check subscription status for UI badge
         if (user && creatorData?.id) {
           try {
             const subResponse = await subscriptionAPI.checkSubscriptionStatus(creatorData.id);
@@ -117,14 +105,11 @@ function PostDetail() {
             console.log('Subscription check failed');
           }
         }
-      }
-      // For subscribers_only posts
-      else if (postData.visibility === 'subscribers_only') {
+      } else if (postData.visibility === 'subscribers_only') {
         if (!user) {
           accessGranted = false;
         } else {
           try {
-            // Check subscription access
             const accessResponse = await subscriptionAPI.checkSubscriptionStatus(creatorData.id);
             accessGranted = accessResponse.data.isSubscribed || false;
             subscriptionStatus = accessGranted;
@@ -138,7 +123,6 @@ function PostDetail() {
       setHasAccess(accessGranted);
       setIsSubscribed(subscriptionStatus);
       
-      // If access is granted, fetch comments
       if (accessGranted) {
         await fetchComments();
       }
@@ -146,10 +130,8 @@ function PostDetail() {
     } catch (error) {
       console.error('Fetch post error:', error);
       
-      // If 403, it's a subscribers-only post
       if (error.response?.status === 403) {
         setHasAccess(false);
-        // Fetch creator info for subscribe button
         try {
           const postResponse = await postAPI.getPostById(id);
           if (postResponse.data.success) {
@@ -225,11 +207,9 @@ function PostDetail() {
 
     try {
       if (bookmarked) {
-        // Call remove bookmark API
         setBookmarked(false);
         toast.success('Removed from bookmarks');
       } else {
-        // Call add bookmark API
         setBookmarked(true);
         toast.success('Added to bookmarks');
       }
@@ -325,7 +305,6 @@ function PostDetail() {
       if (subscribed.data.isSubscribed) {
         setHasAccess(true);
         setIsSubscribed(true);
-        // Refresh post data
         await fetchPost();
         toast.success('Access granted!');
       } else {
@@ -370,7 +349,7 @@ function PostDetail() {
     return formatDate(dateString);
   };
 
-  // Get media URLs - debug function
+  // FUNGSI GET MEDIA URLS - YANG DIPERBAIKI
   const getMediaUrls = () => {
     if (!post) {
       console.log('Post is null');
@@ -379,29 +358,56 @@ function PostDetail() {
     
     console.log('Post data for media:', post);
     
-    // Coba berbagai kemungkinan field media
-    if (post.media_urls && Array.isArray(post.media_urls) && post.media_urls.length > 0) {
-      console.log('Found media_urls:', post.media_urls);
-      return post.media_urls;
-    }
-    if (post.mediaUrls && Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0) {
-      console.log('Found mediaUrls:', post.mediaUrls);
-      return post.mediaUrls;
-    }
-    if (post.media_url) {
-      console.log('Found media_url:', post.media_url);
-      return [post.media_url];
-    }
-    if (post.mediaUrl) {
-      console.log('Found mediaUrl:', post.mediaUrl);
-      return [post.mediaUrl];
+    // CASE 1: Jika fieldnya mediaUrls (array) dari response API
+    if (post.mediaUrls && Array.isArray(post.mediaUrls)) {
+      console.log('Using mediaUrls (array):', post.mediaUrls);
+      
+      const validUrls = post.mediaUrls.filter(url => {
+        if (!url || typeof url !== 'string') return false;
+        if (url.startsWith('blob:')) {
+          console.log('Skipping blob URL:', url);
+          return false;
+        }
+        return true;
+      }).map(url => {
+        // Untuk video, gunakan API endpoint baru
+        if (post.type === 'video') {
+          const filename = url.split('/').pop();
+          if (filename) {
+            return `http://localhost:5000/api/videos/${filename}`;
+          }
+        }
+        return url;
+      });
+      
+      console.log('Valid media URLs:', validUrls);
+      return validUrls;
     }
     
-    console.log('No media found in post');
+    // CASE 2: Jika fieldnya media_url (string) dari database
+    if (post.media_url && typeof post.media_url === 'string') {
+      console.log('Using media_url (string):', post.media_url);
+      
+      if (post.media_url.startsWith('blob:')) {
+        console.log('⚠️ WARNING: This is a blob URL (old data)');
+        return [];
+      }
+      
+      // Untuk video, gunakan API endpoint baru
+      if (post.type === 'video') {
+        const filename = post.media_url.split('/').pop();
+        if (filename) {
+          return [`http://localhost:5000/api/videos/${filename}`];
+        }
+      }
+      
+      return [post.media_url];
+    }
+    
+    console.log('⚠️ No valid media found in post');
     return [];
   };
 
-  // Loading state
   if (loading || checkingAccess) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -413,12 +419,10 @@ function PostDetail() {
     );
   }
 
-  // No access state (subscribers only)
   if (!hasAccess && post && post.visibility === 'subscribers_only') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4 py-12">
-          {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
             className="flex items-center text-gray-600 hover:text-gray-900 mb-8"
@@ -519,7 +523,6 @@ function PostDetail() {
     );
   }
 
-  // Error state
   if (!post) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -653,7 +656,7 @@ function PostDetail() {
                 </div>
               )}
 
-              {/* Media Display */}
+              {/* Media Display - BAGIAN YANG DIPERBAIKI */}
               {mediaUrls.length > 0 ? (
                 <div className="mb-8">
                   {post.type === 'video' ? (
@@ -663,7 +666,12 @@ function PostDetail() {
                         controls 
                         className="w-full h-auto max-h-[70vh]"
                         controlsList="nodownload"
+                        crossOrigin="anonymous"
                         preload="metadata"
+                        onError={(e) => {
+                          console.error('Video load error:', e);
+                          console.error('Video src:', mediaUrls[0]);
+                        }}
                       >
                         Your browser does not support the video tag.
                         <source src={mediaUrls[0]} type="video/mp4" />
@@ -694,7 +702,7 @@ function PostDetail() {
                 </div>
               )}
 
-              {/* Action Buttons - DIBAWAH VIDEO */}
+              {/* Action Buttons */}
               <div className="flex items-center justify-between pt-6 border-t mb-8">
                 <div className="flex items-center space-x-6">
                   <button
@@ -877,7 +885,7 @@ function PostDetail() {
             </div>
           </div>
 
-          {/* Sidebar - Hanya Creator Card dan Related Posts */}
+          {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Creator Card */}
             {creator && (
@@ -939,7 +947,6 @@ function PostDetail() {
             <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="font-bold text-gray-900 mb-4">More from this creator</h3>
               <div className="space-y-4">
-                {/* Placeholder for related posts */}
                 <div className="text-center py-8">
                   <p className="text-gray-500">No other posts available</p>
                 </div>

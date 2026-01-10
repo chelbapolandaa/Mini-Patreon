@@ -2,13 +2,8 @@
 
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
-
-// Import database dan models
-const { sequelize } = require('./config/database');
-const db = require('./models');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -20,32 +15,35 @@ const postRoutes = require('./routes/postRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const midtransRoutes = require('./routes/midtransRoutes');
 const searchRoutes = require('./routes/searchRoutes');
-const uploadRoutes = require('./routes/uploadRoutes'); // Tambah ini
+const uploadRoutes = require('./routes/uploadRoutes');
+const videoRoutes = require('./routes/videoRoutes'); // ← TAMBAH INI
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 
 const app = express();
 
-// Middleware
-app.use(helmet());
+// CORS Configuration untuk API
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: 'http://localhost:3000',
   credentials: true
 }));
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files - PERBAIKI PATH INI
+// Serve static files (untuk images, PDF, dll)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Video streaming melalui API route (dengan CORS yang benar)
+app.use('/api/videos', videoRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
   res.json({
     message: 'Creator Platform API',
-    version: '1.0.0',
-    docs: '/api-docs'
+    version: '1.0.0'
   });
 });
 
@@ -59,7 +57,7 @@ app.use('/api/midtrans', midtransRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/search', searchRoutes);
-app.use('/api/upload', uploadRoutes); // Tambah ini
+app.use('/api/upload', uploadRoutes);
 
 // Error handling middleware
 app.use(notFound);
