@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "date-fns": "^4.1.0",
+    "react-hook-form": "^7.70.0",
+    "yup": "^1.7.1"
+  }
+}
