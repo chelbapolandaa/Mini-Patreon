@@ -4,6 +4,7 @@ const {
   getCreatorStats,
   createPost,
   getMyPosts,
+  getPostById,
   createSubscriptionPlan,
   getMyPlans,
   updatePost,
@@ -20,6 +21,7 @@ router.get('/dashboard/stats', authorize('creator'), getCreatorStats);
 // Post routes
 router.post('/posts', authorize('creator'), createPost);
 router.get('/posts', authorize('creator'), getMyPosts);
+router.get('/posts/:id', authorize('creator'), getPostById);
 router.put('/posts/:id', authorize('creator'), updatePost);
 router.delete('/posts/:id', authorize('creator'), deletePost);
 

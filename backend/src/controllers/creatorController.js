@@ -155,6 +155,54 @@ const getMyPosts = async (req, res) => {
   }
 };
 
+// @desc    Get single post by ID (for editing)
+// @route   GET /api/creators/posts/:id
+// @access  Private (Creator only)
+const getPostById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const creatorId = req.user.id;
+    
+    const post = await Post.findOne({
+      where: { 
+        id: id,
+        creatorId: creatorId 
+      }
+    });
+    
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      post: {
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        excerpt: post.excerpt,
+        type: post.type,
+        visibility: post.visibility,
+        mediaUrls: post.mediaUrls || [],
+        viewCount: post.viewCount,
+        isPublished: post.isPublished,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        creatorId: post.creatorId
+      }
+    });
+  } catch (error) {
+    console.error('Error getting post:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get post'
+    });
+  }
+};
+
 // @desc    Create subscription plan
 // @route   POST /api/creators/plans
 // @access  Private (Creator only)
@@ -235,7 +283,7 @@ const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
     const creatorId = req.user.id;
-    const { title, content, excerpt, visibility, isPublished } = req.body;
+    const { title, content, excerpt, visibility, isPublished, mediaUrls, type } = req.body;
     
     // Find the post
     const post = await Post.findOne({
@@ -255,6 +303,8 @@ const updatePost = async (req, res) => {
     if (excerpt !== undefined) post.excerpt = excerpt;
     if (visibility !== undefined) post.visibility = visibility;
     if (isPublished !== undefined) post.isPublished = isPublished;
+    if (mediaUrls !== undefined) post.mediaUrls = mediaUrls;
+    if (type !== undefined) post.type = type;
     
     await post.save();
     
@@ -311,6 +361,7 @@ module.exports = {
   getCreatorStats,
   createPost,
   getMyPosts,
+  getPostById, // ← TAMBAHKAN INI
   createSubscriptionPlan,
   getMyPlans,
   updatePost,
