@@ -134,49 +134,90 @@ const getPostById = async (req, res) => {
   }
 };
 
-// @desc    Create new post
-// @route   POST /api/posts
-// @access  Private (Creators only)
+
 const createPost = async (req, res) => {
   try {
     const { title, content, excerpt, type, visibility, mediaUrls } = req.body;
-
-    if (!title || !content) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Title and content are required' 
+    
+    console.log('Create post data:', { title, type, visibility, mediaUrls });
+    
+    // Validasi mediaUrls
+    let validMediaUrls = [];
+     if (mediaUrls && Array.isArray(mediaUrls)) {
+      validMediaUrls = mediaUrls.filter(url => {
+        // Filter yang null/undefined dan bukan string
+        if (!url || typeof url !== 'string') return false;
+        
+        // Filter blob URLs
+        if (url.startsWith('blob:')) return false;
+        
+        // Terima URL yang valid (http/https atau /uploads)
+        return url.startsWith('http') || url.startsWith('/uploads') || url.startsWith('data:');
       });
     }
 
+    // Validasi required fields
+    if (!title || !content || !type) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title, content, and type are required'
+      });
+    }
+
+    // Validasi type - SESUAIKAN DENGAN MODEL
+    const validTypes = ['article', 'video', 'file', 'image', 'audio', 'document'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid post type. Must be one of: ' + validTypes.join(', ')
+      });
+    }
+
+    // Validasi visibility - SESUAIKAN DENGAN MODEL
+    const validVisibility = ['public', 'private', 'subscribers'];
+    const postVisibility = visibility || 'public';
+    
+    if (!validVisibility.includes(postVisibility)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid visibility setting. Must be one of: ${validVisibility.join(', ')}`
+      });
+    }
+
+    // Buat post
     const post = await Post.create({
       title,
       content,
-      excerpt,
-      type: type || 'article',
-      visibility: visibility || 'public',
-      mediaUrls: mediaUrls || [],
+      excerpt: excerpt || content.substring(0, 200),
+      type,
+      visibility: postVisibility,
+      mediaUrls: validMediaUrls,
       creatorId: req.user.id,
       isPublished: true
     });
 
-    // Get post with creator info
-    const newPost = await Post.findByPk(post.id, {
-      include: [{
-        model: User,
-        as: 'creator',
-        attributes: ['id', 'name', 'avatar_url']
-      }]
+    // Get complete post data - PERBAIKI INI
+    const completePost = await Post.findByPk(post.id, {
+      include: [
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'name', 'avatarUrl', 'bio'] // PAKAI 'name' BUKAN 'username'
+        }
+      ]
     });
 
     res.status(201).json({
       success: true,
-      data: {
-        post: newPost
-      }
+      data: completePost
     });
+
   } catch (error) {
     console.error('Create post error:', error);
-    res.status(500).json({ success: false, message: 'Error creating post' });
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error creating post'
+    });
   }
 };
 

@@ -19,11 +19,11 @@ const Post = sequelize.define('Post', {
     type: DataTypes.TEXT
   },
   type: {
-    type: DataTypes.ENUM('article', 'video', 'file'),
+    type: DataTypes.ENUM('article', 'video', 'file', 'image', 'audio', 'document'),
     defaultValue: 'article'
   },
   visibility: {
-    type: DataTypes.ENUM('public', 'subscribers_only'),
+    type: DataTypes.ENUM('public', 'private', 'subscribers'),
     defaultValue: 'public'
   },
   viewCount: {
@@ -36,12 +36,12 @@ const Post = sequelize.define('Post', {
     field: 'media_urls',
     defaultValue: []
   },
-  likesCount: { // ← TAMBAHKAN INI
+  likesCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'likes_count'
   },
-  commentsCount: { // ← TAMBAHKAN INI
+  commentsCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'comments_count'

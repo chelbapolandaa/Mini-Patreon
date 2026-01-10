@@ -20,7 +20,7 @@ const postRoutes = require('./routes/postRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const midtransRoutes = require('./routes/midtransRoutes');
 const searchRoutes = require('./routes/searchRoutes');
-
+const uploadRoutes = require('./routes/uploadRoutes'); // Tambah ini
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
@@ -37,7 +37,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
+// Serve static files - PERBAIKI PATH INI
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Basic route
@@ -59,6 +59,7 @@ app.use('/api/midtrans', midtransRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/upload', uploadRoutes); // Tambah ini
 
 // Error handling middleware
 app.use(notFound);

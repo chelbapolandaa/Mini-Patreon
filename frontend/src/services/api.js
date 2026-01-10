@@ -36,6 +36,35 @@ api.interceptors.response.use(
   }
 );
 
+// **PERBAIKAN: Upload API yang benar**
+export const uploadAPI = {
+  // Upload single file ke endpoint yang benar
+  uploadFile: async (formData) => {
+    const response = await api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    return response.data;
+  },
+  
+  // Upload multiple files
+  uploadMultipleFiles: async (formData) => {
+    const response = await api.post('/upload/multiple', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    return response.data;
+  },
+  
+  // Delete uploaded file
+  deleteFile: async (filename, type = 'files') => {
+    const response = await api.delete(`/upload/${filename}?type=${type}`);
+    return response.data;
+  }
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
@@ -65,6 +94,13 @@ export const postAPI = {
   // Comments
   getPostComments: (postId) => api.get(`/posts/${postId}/comments`),
   addComment: (postId, data) => api.post(`/posts/${postId}/comments`, data),
+  
+  // **TAMBAHKAN: Create post untuk semua user (bukan hanya creator)**
+  createPost: (data) => api.post('/posts', data),
+  
+  // **TAMBAHKAN: Update dan delete untuk user biasa**
+  updatePost: (id, data) => api.put(`/posts/${id}`, data),
+  deletePost: (id) => api.delete(`/posts/${id}`),
 };
 
 // Creator API functions
@@ -72,7 +108,7 @@ export const creatorAPI = {
   // Dashboard
   getCreatorStats: () => api.get('/creators/dashboard/stats'),
   
-  // Posts
+  // Posts (creator-specific endpoints - ini yang sudah ada)
   createPost: (data) => api.post('/creators/posts', data),
   getMyPosts: (params) => api.get('/creators/posts', { params }),
   getPostById: (id) => api.get(`/creators/posts/${id}`),
@@ -101,16 +137,6 @@ export const creatorAPI = {
   
   // Analytics
   getAnalytics: (period) => api.get(`/creators/analytics?period=${period}`),
-  
-  // Search - PERBAIKAN: gunakan 'api' bukan 'apiClient'
-  search: (params) => api.get('/search', { params }),
-  
-  // File upload (untuk media post)
-  uploadMedia: (formData) => api.post('/creators/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
 };
 
 // Subscription API functions
@@ -182,19 +208,6 @@ export const searchAPI = {
   getTrendingPosts: () => api.get('/search/trending/posts'),
 };
 
-// File upload API (general)
-export const uploadAPI = {
-  uploadFile: (formData) => api.post('/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
-  
-  uploadImage: (formData) => api.post('/upload/image', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
-};
+// **HAPUS yang duplikat di bawah ini karena sudah ada di atas**
 
 export default api;
