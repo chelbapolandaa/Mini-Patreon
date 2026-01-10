@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { creatorAPI } from '../../services/api';
+import { searchAPI } from '../../services/api';
 
 function SearchBar() {
   const [query, setQuery] = useState('');
@@ -13,41 +13,43 @@ function SearchBar() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-    useEffect(() => {
-    const searchDelay = setTimeout(() => {
-        if (query.trim().length >= 2) {
-        performSearch();
-        } else {
-        setResults({ creators: [], posts: [] });
-        setShowResults(false);
-        }
-    }, 300);
-
-    return () => clearTimeout(searchDelay);
-    }, [query]);
-
-  const performSearch = async () => {
+  // Gunakan useCallback untuk stabilize function
+    const performSearch = useCallback(async () => {
     if (!query.trim()) return;
     
     setLoading(true);
     try {
-      const response = await creatorAPI.search({
-        query: query.trim(),
-        limit: 5
-      });
-      
-      setResults({
-        creators: response.data.creators || [],
-        posts: response.data.posts || []
-      });
-      setShowResults(true);
+        // Untuk dropdown, kita batasi 5 hasil per kategori
+        const response = await searchAPI.search({
+        q: query.trim(),
+        limit: 5 // Hanya 5 untuk dropdown preview
+        });
+        
+        setResults({
+        creators: response.data.data?.creators || [],
+        posts: response.data.data?.posts || []
+        });
+        setShowResults(true);
     } catch (error) {
-      console.error('Search error:', error);
-      setResults({ creators: [], posts: [] });
+        console.error('Search error:', error);
+        setResults({ creators: [], posts: [] });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+    }, [query]);
+
+  useEffect(() => {
+    const searchDelay = setTimeout(() => {
+      if (query.trim().length >= 2) {
+        performSearch();
+      } else {
+        setResults({ creators: [], posts: [] });
+        setShowResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(searchDelay);
+  }, [query, performSearch]); // ✅ Sekarang include performSearch
 
   const handleSearch = (e) => {
     e.preventDefault();

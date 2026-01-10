@@ -19,6 +19,8 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const postRoutes = require('./routes/postRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const midtransRoutes = require('./routes/midtransRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
@@ -56,6 +58,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/midtrans', midtransRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/search', searchRoutes);
 
 // Error handling middleware
 app.use(notFound);

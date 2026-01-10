@@ -36,6 +36,16 @@ const Post = sequelize.define('Post', {
     field: 'media_urls',
     defaultValue: []
   },
+  likesCount: { // ← TAMBAHKAN INI
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    field: 'likes_count'
+  },
+  commentsCount: { // ← TAMBAHKAN INI
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    field: 'comments_count'
+  },
   isPublished: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
@@ -45,23 +55,13 @@ const Post = sequelize.define('Post', {
     type: DataTypes.UUID,
     allowNull: false,
     field: 'creator_id'
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'created_at'
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'updated_at'
   }
 }, {
   tableName: 'posts',
   timestamps: true,
-  underscored: true, // ← TAMBAHKAN INI
-  createdAt: 'created_at', // ← TAMBAHKAN INI
-  updatedAt: 'updated_at' // ← TAMBAHKAN INI
+  underscored: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
 module.exports = Post;
