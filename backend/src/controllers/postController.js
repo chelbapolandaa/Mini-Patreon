@@ -395,6 +395,7 @@ const getPostComments = async (req, res) => {
       where: { postId: post.id },
       include: [{
         model: User,
+        as: 'user', // <-- TAMBAHKAN INI
         attributes: ['id', 'name', 'avatar_url']
       }],
       order: [['created_at', 'DESC']],
@@ -468,6 +469,7 @@ const addComment = async (req, res) => {
     const commentWithUser = await Comment.findByPk(comment.id, {
       include: [{
         model: User,
+        as: 'user', // <-- TAMBAHKAN INI
         attributes: ['id', 'name', 'avatar_url']
       }]
     });

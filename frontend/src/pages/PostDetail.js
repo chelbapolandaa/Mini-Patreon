@@ -48,6 +48,8 @@ function PostDetail() {
       }
     } catch (error) {
       console.error('Failed to fetch comments:', error);
+      // Tetap set comments kosong jika error
+      setComments([]);
     }
   }, [id]);
 
@@ -87,7 +89,6 @@ function PostDetail() {
       
       // Fetch post data first
       const response = await postAPI.getPostById(id);
-      console.log('Post response:', response.data); // Debug log
       
       // Handle different response structures
       let postData = null;
@@ -158,17 +159,10 @@ function PostDetail() {
           subscriptionStatus = false;
         }
       }
-      // 4. Default: beri akses (untuk backward compatibility)
+      // 4. Default: tidak ada akses
       else {
-        accessGranted = true;
+        accessGranted = false;
       }
-      
-      console.log('Access check:', { 
-        hasAccess: accessGranted, 
-        isSubscribed: subscriptionStatus,
-        visibility: postData.visibility,
-        userIsCreator: user && creatorData && user.id === creatorData.id
-      });
       
       setHasAccess(accessGranted);
       setIsSubscribed(subscriptionStatus);
@@ -555,6 +549,32 @@ function PostDetail() {
     );
   }
 
+  // Get media URL - handle berbagai format
+  const getMediaUrls = () => {
+    if (!post) return [];
+    
+    // Coba berbagai kemungkinan field media
+    if (post.media_urls && Array.isArray(post.media_urls) && post.media_urls.length > 0) {
+      return post.media_urls;
+    }
+    if (post.mediaUrls && Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0) {
+      return post.mediaUrls;
+    }
+    if (post.media_url) {
+      return [post.media_url];
+    }
+    if (post.mediaUrl) {
+      return [post.mediaUrl];
+    }
+    if (post.thumbnail) {
+      return [post.thumbnail];
+    }
+    
+    return [];
+  };
+
+  const mediaUrls = getMediaUrls();
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -717,29 +737,32 @@ function PostDetail() {
                 </div>
               )}
 
-              {/* Media */}
-              {post.media_urls && post.media_urls.length > 0 ? (
+              {/* Media Display */}
+              {mediaUrls.length > 0 && (
                 <div className="mb-8">
                   {post.type === 'video' ? (
-                    <div className="relative w-full aspect-w-16 aspect-h-9 bg-black rounded-xl overflow-hidden shadow-xl">
-                      <video 
-                        src={post.media_urls[0]} 
-                        controls 
-                        className="w-full h-full object-cover"
-                        controlsList="nodownload"
-                        poster={post.thumbnail}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
+                    <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-xl">
+                      <div className="aspect-w-16 aspect-h-9">
+                        <video 
+                          src={mediaUrls[0]} 
+                          controls 
+                          className="w-full h-full object-contain"
+                          controlsList="nodownload"
+                          preload="metadata"
+                        >
+                          Your browser does not support the video tag.
+                          <source src={mediaUrls[0]} type="video/mp4" />
+                        </video>
+                      </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {post.media_urls.map((url, index) => (
+                      {mediaUrls.map((url, index) => (
                         <div key={index} className="relative group">
                           <img
                             src={url}
                             alt={`Post media ${index + 1}`}
-                            className="rounded-xl shadow-md w-full h-auto object-cover max-h-96"
+                            className="rounded-xl shadow-md w-full h-auto object-cover max-h-[70vh]"
                             onError={(e) => {
                               e.target.onerror = null;
                               e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
@@ -751,37 +774,7 @@ function PostDetail() {
                     </div>
                   )}
                 </div>
-              ) : post.media_url ? (
-                // Fallback untuk media_url (single URL)
-                <div className="mb-8">
-                  {post.type === 'video' ? (
-                    <div className="relative w-full aspect-w-16 aspect-h-9 bg-black rounded-xl overflow-hidden shadow-xl">
-                      <video 
-                        src={post.media_url} 
-                        controls 
-                        className="w-full h-full object-cover"
-                        controlsList="nodownload"
-                        poster={post.thumbnail}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  ) : (
-                    <div className="relative group">
-                      <img
-                        src={post.media_url}
-                        alt="Post media"
-                        className="rounded-xl shadow-md w-full h-auto object-cover max-h-96"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition duration-200 rounded-xl"></div>
-                    </div>
-                  )}
-                </div>
-              ) : null}
+              )}
 
               {/* Content */}
               <div className="prose prose-lg max-w-none">
@@ -914,7 +907,7 @@ function PostDetail() {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar - Hanya Creator Card dan Related Posts */}
           <div className="lg:col-span-1">
             {/* Creator Card */}
             {creator && (
@@ -979,39 +972,6 @@ function PostDetail() {
                 {/* Placeholder for related posts */}
                 <div className="text-center py-8">
                   <p className="text-gray-500">No other posts available</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Post Info */}
-            <div className="bg-white rounded-xl shadow-md p-6 mt-6">
-              <h3 className="font-bold text-gray-900 mb-4">Post Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Type</span>
-                  <span className="font-medium capitalize">{post.type || 'article'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Visibility</span>
-                  <span className={`font-medium ${post.visibility === 'public' ? 'text-green-600' : 'text-purple-600'}`}>
-                    {post.visibility === 'public' ? 'Public' : 'Subscribers Only'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Published</span>
-                  <span className="font-medium">{formatDate(post.created_at || post.createdAt || post.created_at)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Views</span>
-                  <span className="font-medium">{(post.view_count || 0).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Likes</span>
-                  <span className="font-medium">{likeCount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Comments</span>
-                  <span className="font-medium">{commentCount.toLocaleString()}</span>
                 </div>
               </div>
             </div>
