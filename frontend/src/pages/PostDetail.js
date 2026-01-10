@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // ← TAMBAHKAN useCallback
 import { useParams, useNavigate } from 'react-router-dom';
 import { postAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
@@ -20,11 +20,7 @@ function PostDetail() {
   const [hasAccess, setHasAccess] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchPost();
-  }, [id]);
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -54,7 +50,11 @@ function PostDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]); // ← TAMBAHKAN DEPENDENCY
+
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]); // ← PERBAIKI INI
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown date';
