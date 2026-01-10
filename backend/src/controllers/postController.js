@@ -1,124 +1,442 @@
 const Post = require('../models/Post');
+const User = require('../models/User');
+const Comment = require('../models/Comment');
+const PostLike = require('../models/PostLike');
 const Subscription = require('../models/Subscription');
+const { Op } = require('sequelize');
 
-// @desc    Get posts
+// @desc    Get all posts (with filters)
 // @route   GET /api/posts
 // @access  Public
 const getPosts = async (req, res) => {
   try {
-    const { creatorId, page = 1, limit = 10 } = req.query;
+    const {
+      creatorId,
+      type,
+      visibility,
+      isPublished,
+      page = 1,
+      limit = 20,
+      sortBy = 'created_at',
+      sortOrder = 'DESC'
+    } = req.query;
+
+    const whereClause = {};
+    
+    if (creatorId) whereClause.creatorId = creatorId;
+    if (type) whereClause.type = type;
+    if (visibility) whereClause.visibility = visibility;
+    if (isPublished !== undefined) whereClause.isPublished = isPublished === 'true';
+
     const offset = (page - 1) * limit;
-    
-    const where = { isPublished: true };
-    if (creatorId) where.creatorId = creatorId;
-    
-    // For non-logged in users, only show public posts
-    if (!req.user) {
-      where.visibility = 'public';
-    }
-    
-    const posts = await Post.findAll({
-      where,
+
+    const posts = await Post.findAndCountAll({
+      where: whereClause,
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name', 'avatar_url', 'is_verified']
+      }],
+      order: [[sortBy, sortOrder]],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: require('../models/User'),
-          as: 'creator',
-          attributes: ['id', 'name', 'avatarUrl']
-        }
-      ]
+      distinct: true
     });
-    
-    // Check access for each post if user is logged in
-    const postsWithAccess = await Promise.all(
-      posts.map(async (post) => {
-        const postData = post.toJSON();
-        
-        if (req.user) {
-          // Check if user has access
-          if (post.visibility === 'subscribers_only') {
-            const hasAccess = await Subscription.findOne({
-              where: {
-                userId: req.user.id,
-                creatorId: post.creatorId,
-                status: 'active'
-              }
-            });
-            
-            postData.hasAccess = !!hasAccess;
-            
-            // If no access, hide full content
-            if (!hasAccess) {
-              postData.content = postData.content.substring(0, 200) + '...';
-              postData.isLocked = true;
-            }
-          } else {
-            postData.hasAccess = true;
-          }
-        } else {
-          // Non-logged in users only see public content
-          if (post.visibility === 'subscribers_only') {
-            postData.content = postData.content.substring(0, 200) + '...';
-            postData.isLocked = true;
-            postData.hasAccess = false;
-          } else {
-            postData.hasAccess = true;
-          }
-        }
-        
-        return postData;
-      })
-    );
-    
-    const total = await Post.count({ where });
-    
+
     res.json({
       success: true,
-      count: posts.length,
-      total,
-      pages: Math.ceil(total / limit),
-      currentPage: parseInt(page),
-      posts: postsWithAccess
+      data: {
+        posts: posts.rows,
+        total: posts.count,
+        page: parseInt(page),
+        totalPages: Math.ceil(posts.count / limit)
+      }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error('Get posts error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching posts' });
   }
 };
 
-// @desc    Get single post
+// @desc    Get single post by ID
 // @route   GET /api/posts/:id
-// @access  Public
+// @access  Public/Protected (depending on visibility)
 const getPostById = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id, {
-      include: [
-        {
-          model: require('../models/User'),
-          as: 'creator',
-          attributes: ['id', 'name', 'avatarUrl', 'bio']
-        }
-      ]
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name', 'avatar_url', 'bio', 'is_verified', 'created_at']
+      }]
     });
-    
-    if (!post || !post.isPublished) {
-      return res.status(404).json({
-        success: false,
-        message: 'Post not found'
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    let hasAccess = true;
+    let isSubscribed = false;
+
+    // Check access for subscribers-only posts
+    if (post.visibility === 'subscribers_only') {
+      if (!req.user) {
+        hasAccess = false;
+      } else {
+        // Check if user is the creator
+        if (req.user.id === post.creatorId) {
+          hasAccess = true;
+        } else {
+          // Check if user is subscribed
+          const subscription = await Subscription.findOne({
+            where: {
+              userId: req.user.id,
+              creatorId: post.creatorId,
+              status: 'active'
+            }
+          });
+          
+          hasAccess = !!subscription;
+          isSubscribed = !!subscription;
+        }
+      }
+    }
+
+    // If user has access, increment view count
+    if (hasAccess) {
+      await post.increment('view_count');
+    }
+
+    // Check if current user has liked the post
+    let userLiked = false;
+    if (req.user) {
+      const like = await PostLike.findOne({
+        where: { postId: post.id, userId: req.user.id }
+      });
+      userLiked = !!like;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        post: {
+          ...post.toJSON(),
+          userLiked
+        },
+        hasAccess,
+        isSubscribed
+      }
+    });
+
+  } catch (error) {
+    console.error('Get post by ID error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching post' });
+  }
+};
+
+// @desc    Create new post
+// @route   POST /api/posts
+// @access  Private (Creators only)
+const createPost = async (req, res) => {
+  try {
+    const { title, content, excerpt, type, visibility, mediaUrls } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Title and content are required' 
       });
     }
-    
-    let hasAccess = false;
-    let isLocked = false;
-    
-    if (post.visibility === 'public') {
-      hasAccess = true;
-    } else if (post.visibility === 'subscribers_only') {
-      if (req.user) {
+
+    const post = await Post.create({
+      title,
+      content,
+      excerpt,
+      type: type || 'article',
+      visibility: visibility || 'public',
+      mediaUrls: mediaUrls || [],
+      creatorId: req.user.id,
+      isPublished: true
+    });
+
+    // Get post with creator info
+    const newPost = await Post.findByPk(post.id, {
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name', 'avatar_url']
+      }]
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        post: newPost
+      }
+    });
+  } catch (error) {
+    console.error('Create post error:', error);
+    res.status(500).json({ success: false, message: 'Error creating post' });
+  }
+};
+
+// @desc    Update post
+// @route   PUT /api/posts/:id
+// @access  Private (Creator of the post)
+const updatePost = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Check if user is the creator of the post
+    if (post.creatorId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized to update this post' 
+      });
+    }
+
+    const { title, content, excerpt, type, visibility, mediaUrls, isPublished } = req.body;
+
+    // Update fields
+    if (title !== undefined) post.title = title;
+    if (content !== undefined) post.content = content;
+    if (excerpt !== undefined) post.excerpt = excerpt;
+    if (type !== undefined) post.type = type;
+    if (visibility !== undefined) post.visibility = visibility;
+    if (mediaUrls !== undefined) post.mediaUrls = mediaUrls;
+    if (isPublished !== undefined) post.isPublished = isPublished;
+
+    await post.save();
+
+    // Get updated post with creator info
+    const updatedPost = await Post.findByPk(post.id, {
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name', 'avatar_url']
+      }]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        post: updatedPost
+      }
+    });
+  } catch (error) {
+    console.error('Update post error:', error);
+    res.status(500).json({ success: false, message: 'Error updating post' });
+  }
+};
+
+// @desc    Delete post
+// @route   DELETE /api/posts/:id
+// @access  Private (Creator of the post)
+const deletePost = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Check if user is the creator of the post
+    if (post.creatorId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized to delete this post' 
+      });
+    }
+
+    await post.destroy();
+
+    res.json({
+      success: true,
+      message: 'Post deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete post error:', error);
+    res.status(500).json({ success: false, message: 'Error deleting post' });
+  }
+};
+
+// @desc    Like a post
+// @route   POST /api/posts/:id/like
+// @access  Private
+const likePost = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Check if already liked
+    const existingLike = await PostLike.findOne({
+      where: { postId: post.id, userId: req.user.id }
+    });
+
+    if (existingLike) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Post already liked' 
+      });
+    }
+
+    // Create like
+    await PostLike.create({
+      postId: post.id,
+      userId: req.user.id
+    });
+
+    // Increment like count
+    await post.increment('likes_count');
+
+    res.json({
+      success: true,
+      liked: true,
+      likesCount: post.likes_count + 1
+    });
+  } catch (error) {
+    console.error('Like post error:', error);
+    res.status(500).json({ success: false, message: 'Error liking post' });
+  }
+};
+
+// @desc    Unlike a post
+// @route   DELETE /api/posts/:id/like
+// @access  Private
+const unlikePost = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Find the like
+    const like = await PostLike.findOne({
+      where: { postId: post.id, userId: req.user.id }
+    });
+
+    if (!like) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Post not liked' 
+      });
+    }
+
+    // Remove like
+    await like.destroy();
+
+    // Decrement like count
+    await post.decrement('likes_count');
+
+    res.json({
+      success: true,
+      liked: false,
+      likesCount: post.likes_count - 1
+    });
+  } catch (error) {
+    console.error('Unlike post error:', error);
+    res.status(500).json({ success: false, message: 'Error unliking post' });
+  }
+};
+
+// @desc    Get post likes
+// @route   GET /api/posts/:id/likes
+// @access  Public
+const getPostLikes = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    const likes = await PostLike.findAll({
+      where: { postId: post.id },
+      include: [{
+        model: User,
+        attributes: ['id', 'name', 'avatar_url']
+      }],
+      limit: 50
+    });
+
+    res.json({
+      success: true,
+      data: {
+        likes,
+        total: post.likes_count
+      }
+    });
+  } catch (error) {
+    console.error('Get post likes error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching likes' });
+  }
+};
+
+// @desc    Get post comments
+// @route   GET /api/posts/:id/comments
+// @access  Public
+const getPostComments = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    const comments = await Comment.findAll({
+      where: { postId: post.id },
+      include: [{
+        model: User,
+        attributes: ['id', 'name', 'avatar_url']
+      }],
+      order: [['created_at', 'DESC']],
+      limit: 100
+    });
+
+    res.json({
+      success: true,
+      data: {
+        comments,
+        total: post.comments_count
+      }
+    });
+  } catch (error) {
+    console.error('Get post comments error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching comments' });
+  }
+};
+
+// @desc    Add comment to post
+// @route   POST /api/posts/:id/comments
+// @access  Private
+const addComment = async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Comment content is required' 
+      });
+    }
+
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Check access for subscribers-only posts
+    if (post.visibility === 'subscribers_only') {
+      if (req.user.id !== post.creatorId) {
         const subscription = await Subscription.findOne({
           where: {
             userId: req.user.id,
@@ -126,35 +444,180 @@ const getPostById = async (req, res) => {
             status: 'active'
           }
         });
-        hasAccess = !!subscription;
-      }
-      
-      if (!hasAccess) {
-        isLocked = true;
-        post.content = post.content.substring(0, 200) + '...';
+        
+        if (!subscription) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Subscribers only' 
+          });
+        }
       }
     }
-    
-    // Increment view count
-    await post.increment('viewCount');
-    
-    res.json({
+
+    // Create comment
+    const comment = await Comment.create({
+      content: content.trim(),
+      postId: post.id,
+      userId: req.user.id
+    });
+
+    // Increment comment count
+    await post.increment('comments_count');
+
+    // Get comment with user info
+    const commentWithUser = await Comment.findByPk(comment.id, {
+      include: [{
+        model: User,
+        attributes: ['id', 'name', 'avatar_url']
+      }]
+    });
+
+    res.status(201).json({
       success: true,
-      post: {
-        ...post.toJSON(),
-        hasAccess,
-        isLocked
+      data: {
+        comment: commentWithUser
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
+    console.error('Add comment error:', error);
+    res.status(500).json({ success: false, message: 'Error adding comment' });
+  }
+};
+
+// @desc    Delete comment
+// @route   DELETE /api/posts/:id/comments/:commentId
+// @access  Private (Comment owner or post creator)
+const deleteComment = async (req, res) => {
+  try {
+    const comment = await Comment.findByPk(req.params.commentId, {
+      include: [{
+        model: Post,
+        attributes: ['id', 'creatorId']
+      }]
     });
+
+    if (!comment) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
+    }
+
+    // Check permissions
+    const isCommentOwner = comment.userId === req.user.id;
+    const isPostCreator = comment.Post.creatorId === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isCommentOwner && !isPostCreator && !isAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized to delete this comment' 
+      });
+    }
+
+    await comment.destroy();
+
+    // Decrement comment count
+    await Post.decrement('comments_count', {
+      where: { id: comment.postId }
+    });
+
+    res.json({
+      success: true,
+      message: 'Comment deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    res.status(500).json({ success: false, message: 'Error deleting comment' });
+  }
+};
+
+// @desc    Check if user has access to post
+// @route   GET /api/posts/:id/access
+// @access  Private
+const checkPostAccess = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    let hasAccess = true;
+    let isSubscribed = false;
+
+    if (post.visibility === 'subscribers_only') {
+      if (!req.user) {
+        hasAccess = false;
+      } else {
+        // Check if user is the creator
+        if (req.user.id === post.creatorId) {
+          hasAccess = true;
+        } else {
+          // Check if user is subscribed
+          const subscription = await Subscription.findOne({
+            where: {
+              userId: req.user.id,
+              creatorId: post.creatorId,
+              status: 'active'
+            }
+          });
+          
+          hasAccess = !!subscription;
+          isSubscribed = !!subscription;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hasAccess,
+        isSubscribed,
+        postId: post.id,
+        creatorId: post.creatorId
+      }
+    });
+  } catch (error) {
+    console.error('Check post access error:', error);
+    res.status(500).json({ success: false, message: 'Error checking access' });
+  }
+};
+
+// @desc    Increment post view count
+// @route   POST /api/posts/:id/view
+// @access  Public
+const incrementViewCount = async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    await post.increment('view_count');
+
+    res.json({
+      success: true,
+      data: {
+        viewCount: post.view_count + 1
+      }
+    });
+  } catch (error) {
+    console.error('Increment view count error:', error);
+    res.status(500).json({ success: false, message: 'Error incrementing view count' });
   }
 };
 
 module.exports = {
   getPosts,
-  getPostById
+  getPostById,
+  createPost,
+  updatePost,
+  deletePost,
+  likePost,
+  unlikePost,
+  getPostLikes,
+  getPostComments,
+  addComment,
+  deleteComment,
+  checkPostAccess,
+  incrementViewCount
 };
