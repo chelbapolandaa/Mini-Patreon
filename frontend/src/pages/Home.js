@@ -1,10 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { StarIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { postAPI } from '../services/api';
 
 function Home() {
   const { user } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+  async function fetchPosts() {
+    try {
+      const res = await postAPI.getPublicPosts();
+      console.log("API response:", res.data); // debug
+      setPosts(res.data.data); // <-- ambil array langsung
+    } catch (err) {
+      console.error("Error fetching posts", err);
+      setPosts([]); // fallback biar tetap array
+    } finally {
+      setLoading(false);
+    }
+  }
+  fetchPosts();
+}, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -35,6 +54,61 @@ function Home() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Feed Section */}
+      <div className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold mb-8 text-center">Latest Posts</h2>
+
+        {loading ? (
+          <p className="text-center text-gray-500">Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p className="text-center text-gray-500">No posts yet</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-8">
+            {posts.map(post => (
+              <div key={post.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
+                {/* Klik seluruh card untuk buka PostDetail */}
+                <Link to={`/posts/${post.id}`} className="block">
+                  {post.type === 'video' && post.mediaUrls.length > 0 ? (
+                    <video controls className="w-full h-64 object-cover">
+                      <source src={post.mediaUrls[0]} type="video/mp4" />
+                    </video>
+                  ) : post.mediaUrls.length > 0 ? (
+                    <img src={post.mediaUrls[0]} alt={post.title} className="w-full h-64 object-cover" />
+                  ) : (
+                    <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-500">
+                      No media
+                    </div>
+                  )}
+                </Link>
+
+                <div className="p-4">
+                  {/* Judul post juga bisa diklik */}
+                  <Link to={`/posts/${post.id}`} className="text-lg font-semibold mb-2 hover:underline block">
+                    {post.title}
+                  </Link>
+
+                  {/* Link ke profil creator */}
+                  <p className="text-gray-600 text-sm flex items-center gap-2">
+                    by{" "}
+                    <Link to={`/creator/${post.creator?.id}`} className="text-blue-600 hover:underline flex items-center gap-1">
+                      {post.creator?.avatar_url && (
+                        <img
+                          src={post.creator.avatar_url}
+                          alt={post.creator.name}
+                          className="w-5 h-5 rounded-full object-cover"
+                        />
+                      )}
+                      {post.creator?.name || "Unknown"}
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        )}
       </div>
 
       {/* Features Section */}

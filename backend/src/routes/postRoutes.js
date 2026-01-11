@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
 const {
   getPosts,
+  getPublicPosts,
   getPostById,
   createPost,
   updatePost,
@@ -19,6 +20,7 @@ const {
 
 // Public routes
 router.get('/', getPosts);
+router.get('/public', getPublicPosts);
 router.get('/:id', getPostById);
 router.get('/:id/comments', getPostComments);
 router.get('/:id/likes', getPostLikes);

@@ -649,6 +649,32 @@ const incrementViewCount = async (req, res) => {
   }
 };
 
+// @desc    Get all public posts
+// @route   GET /api/posts/public
+// @access  Public
+const getPublicPosts = async (req, res) => {
+  try {
+    const posts = await Post.findAll({
+      where: { visibility: 'public', isPublished: true },
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name', 'avatar_url', 'is_verified']
+      }],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: posts
+    });
+  } catch (error) {
+    console.error('Get public posts error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching public posts' });
+  }
+};
+
+
 module.exports = {
   getPosts,
   getPostById,
@@ -662,5 +688,6 @@ module.exports = {
   addComment,
   deleteComment,
   checkPostAccess,
-  incrementViewCount
+  incrementViewCount,
+  getPublicPosts
 };
