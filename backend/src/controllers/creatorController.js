@@ -1,5 +1,109 @@
 const { User, Post, Subscription, SubscriptionPlan, Transaction } = require('../models');
 
+// @desc    Get all creators (browse)
+// @route   GET /api/creators
+// @access  Public
+const getCreators = async (req, res) => {
+  try {
+    const { page = 1, limit = 12, search = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    const whereClause = { role: 'creator' };
+    if (search) {
+      whereClause.name = { [Op.iLike]: `%${search}%` };
+    }
+
+    const creators = await User.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['created_at', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: {
+        creators: creators.rows,
+        total: creators.count,
+        page: parseInt(page),
+        totalPages: Math.ceil(creators.count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get creators error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching creators' });
+  }
+};
+
+// @desc    Get creator profile
+// @route   GET /api/creators/:id/profile
+// @access  Public
+const getCreatorProfile = async (req, res) => {
+  try {
+    const creatorId = req.params.id;
+
+    // Ambil data creator
+    const creator = await User.findByPk(creatorId, {
+      attributes: ['id', 'name', 'avatar_url', 'bio', 'is_verified', 'created_at', 'role']
+    });
+
+    if (!creator || creator.role !== 'creator') {
+      return res.status(404).json({ success: false, message: 'Creator not found' });
+    }
+
+    // Ambil subscription plans aktif
+    const plans = await SubscriptionPlan.findAll({
+      where: { creatorId, isActive: true },
+      attributes: ['id', 'name', 'description', 'price', 'interval', 'features']
+    });
+
+    // Hitung stats
+    const subscribersCount = await Subscription.count({
+      where: { creatorId, status: 'active' }
+    });
+
+    const totalPosts = await Post.count({
+      where: { creatorId }
+    });
+
+    const publicPosts = await Post.count({
+      where: { creatorId, visibility: 'public' }
+    });
+
+    // Kalau ada user login, cek apakah dia sudah subscribe
+    let isSubscribed = false;
+    if (req.user) {
+      const activeSub = await Subscription.findOne({
+        where: { creatorId, userId: req.user.id, status: 'active' }
+      });
+      isSubscribed = !!activeSub;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: creator.id,
+        name: creator.name,
+        avatar_url: creator.avatar_url,
+        bio: creator.bio,
+        is_verified: creator.is_verified,
+        created_at: creator.created_at,
+        role: creator.role,
+        stats: {
+          subscribers: subscribersCount,
+          totalPosts,
+          publicPosts
+        },
+        plans,
+        isSubscribed
+      }
+    });
+  } catch (error) {
+    console.error('Get creator profile error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching creator profile' });
+  }
+};
+
 // @desc    Get creator stats
 // @route   GET /api/creators/dashboard/stats
 // @access  Private (Creator only)
@@ -361,9 +465,11 @@ module.exports = {
   getCreatorStats,
   createPost,
   getMyPosts,
-  getPostById, // ← TAMBAHKAN INI
+  getPostById,
   createSubscriptionPlan,
   getMyPlans,
   updatePost,
-  deletePost
+  deletePost,
+  getCreators, 
+  getCreatorProfile
 };

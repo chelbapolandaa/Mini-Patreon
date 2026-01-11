@@ -23,8 +23,8 @@ function CreatorProfile() {
       
       setLoading(true);
       const response = await subscriptionAPI.getCreatorProfile(id);
-      setCreator(response.data.creator);
-      setPlans(response.data.plans || []);
+      setCreator(response.data.data);
+      setPlans(response.data.data.plans || []);
       setIsSubscribed(response.data.isSubscribed || false);
     } catch (error) {
       toast.error('Failed to load creator profile');
@@ -108,9 +108,9 @@ function CreatorProfile() {
           <div className="flex flex-col md:flex-row md:items-center">
             <div className="flex items-center space-x-4 mb-6 md:mb-0 md:flex-1">
               <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-                {creator.avatarUrl ? (
+                {creator.avatar_url ? (
                   <img 
-                    src={creator.avatarUrl} 
+                    src={creator.avatar_url} 
                     alt={creator.name}
                     className="w-24 h-24 rounded-full object-cover"
                   />

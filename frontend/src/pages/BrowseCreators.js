@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { subscriptionAPI } from '../services/api';
+import { creatorAPI } from '../services/api'; // pastikan pakai creatorAPI, bukan subscriptionAPI
 import { toast } from 'react-hot-toast';
 import {
   UserGroupIcon,
@@ -23,16 +23,25 @@ function BrowseCreators() {
   const fetchCreators = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await subscriptionAPI.getCreators({
+      const response = await creatorAPI.getCreators({
         page: pagination.page,
         limit: pagination.limit,
         search
       });
-      setCreators(response.data.creators);
-      setPagination(response.data.pagination);
+
+      const payload = response.data.data; // backend return { success, data: { creators, total, page, totalPages } }
+
+      setCreators(payload.creators || []);
+      setPagination(prev => ({
+        ...prev,
+        page: payload.page,
+        total: payload.total,
+        pages: payload.totalPages
+      }));
     } catch (error) {
       toast.error('Failed to load creators');
       console.error('Error fetching creators:', error);
+      setCreators([]);
     } finally {
       setLoading(false);
     }
@@ -111,15 +120,15 @@ function BrowseCreators() {
                   <div className="p-6">
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        {creator.avatarUrl ? (
+                        {creator.avatar_url ? (
                           <img 
-                            src={creator.avatarUrl} 
+                            src={creator.avatar_url} 
                             alt={creator.name}
                             className="w-16 h-16 rounded-full object-cover"
                           />
                         ) : (
                           <span className="text-2xl font-bold text-blue-600">
-                            {creator.name.charAt(0)}
+                            {creator.name?.charAt(0)}
                           </span>
                         )}
                       </div>

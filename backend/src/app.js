@@ -16,7 +16,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const midtransRoutes = require('./routes/midtransRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
-const videoRoutes = require('./routes/videoRoutes'); // ← TAMBAH INI
+const videoRoutes = require('./routes/videoRoutes');
+const creatorPublicRoutes = require('./routes/creatorPublicRoutes');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
@@ -50,6 +51,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/creators', creatorPublicRoutes);
 app.use('/api/creators', creatorRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/payments', paymentRoutes);
