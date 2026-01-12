@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { creatorAPI } from '../services/api'; // pastikan pakai creatorAPI, bukan subscriptionAPI
+import { subscriptionAPI } from '../services/api'; // pastikan pakai creatorAPI, bukan subscriptionAPI
 import { toast } from 'react-hot-toast';
 import {
   UserGroupIcon,
@@ -23,10 +23,10 @@ function BrowseCreators() {
   const fetchCreators = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await creatorAPI.getCreators({
+      const response = await subscriptionAPI.getCreators({
         page: pagination.page,
         limit: pagination.limit,
-        search
+        q: search
       });
 
       const payload = response.data.data; // backend return { success, data: { creators, total, page, totalPages } }
