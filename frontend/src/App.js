@@ -17,6 +17,7 @@ import CreatePlan from './pages/CreatePlan';
 import BrowseCreators from './pages/BrowseCreators';
 import CreatorProfile from './pages/CreatorProfile';
 import PaymentStatus from './pages/PaymentStatus';
+import SearchResults from './pages/SearchResults';
 import './index.css';
 
 // Protected Route Component
@@ -141,6 +142,7 @@ function App() {
               <Route path="/subscription/success" element={<PaymentStatus />} />
               <Route path="/subscription/pending" element={<PaymentStatus />} />
               <Route path="/subscription/error" element={<PaymentStatus />} />
+              <Route path="/search" element={<SearchResults />} />
               
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" />} />

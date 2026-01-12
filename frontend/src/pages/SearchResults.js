@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { creatorAPI } from '../services/api';
+import { searchAPI } from '../services/api'; // ✅ pakai searchAPI, bukan creatorAPI
 import { 
   MagnifyingGlassIcon,
   UserCircleIcon,
   PhotoIcon,
   VideoCameraIcon,
-  DocumentIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 function SearchResults() {
@@ -29,17 +29,18 @@ function SearchResults() {
   const fetchSearchResults = async () => {
     setLoading(true);
     try {
-      const response = await creatorAPI.search({ 
-        query, 
+      const response = await searchAPI.search({ 
+        q: query, 
         limit: 20 
       });
       
       setResults({
-        creators: response.data.creators || [],
-        posts: response.data.posts || []
+        creators: response.data.data?.creators || [],
+        posts: response.data.data?.posts || []
       });
     } catch (error) {
       console.error('Search error:', error);
+      setResults({ creators: [], posts: [] });
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ function SearchResults() {
     switch(type) {
       case 'video': return <VideoCameraIcon className="h-5 w-5 text-red-500" />;
       case 'image': return <PhotoIcon className="h-5 w-5 text-blue-500" />;
-      default: return <DocumentIcon className="h-5 w-5 text-gray-500" />;
+      default: return <DocumentTextIcon className="h-5 w-5 text-gray-500" />;
     }
   };
 
@@ -116,7 +117,7 @@ function SearchResults() {
                   {filteredResults.creators.map(creator => (
                     <Link
                       key={creator._id}
-                      to={`/creators/${creator._id}`}
+                      to={`/creator/${creator._id}`} // ✅ pakai /creator/:id
                       className="bg-white rounded-xl shadow-sm border p-4 hover:shadow-md transition duration-200"
                     >
                       <div className="flex items-center space-x-3">
@@ -195,7 +196,7 @@ function SearchResults() {
                           
                           <div className="flex items-center mt-1 text-sm text-gray-600">
                             <Link 
-                              to={`/creators/${post.creatorId}`}
+                              to={`/creator/${post.creatorId}`} // ✅ pakai /creator/:id
                               className="text-blue-600 hover:text-blue-700"
                               onClick={(e) => e.stopPropagation()}
                             >
