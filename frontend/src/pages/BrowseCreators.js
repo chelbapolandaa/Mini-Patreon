@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { subscriptionAPI } from '../services/api'; // pastikan pakai creatorAPI, bukan subscriptionAPI
+import { subscriptionAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import {
   UserGroupIcon,
@@ -29,9 +29,28 @@ function BrowseCreators() {
         q: search
       });
 
-      const payload = response.data.data; // backend return { success, data: { creators, total, page, totalPages } }
+      const payload = response.data.data;
+      const creatorsList = payload.creators || [];
 
-      setCreators(payload.creators || []);
+      // Ambil detail profile untuk setiap creator
+      const detailedCreators = await Promise.all(
+        creatorsList.map(async (creator) => {
+          try {
+            const profileRes = await subscriptionAPI.getCreatorProfile(creator.id);
+            const profile = profileRes.data.data;
+            return {
+              ...creator,
+              stats: profile.stats,
+              plans: profile.plans
+            };
+          } catch (err) {
+            console.error('Error fetching profile for', creator.id, err);
+            return creator;
+          }
+        })
+      );
+
+      setCreators(detailedCreators);
       setPagination(prev => ({
         ...prev,
         page: payload.page,
@@ -120,9 +139,9 @@ function BrowseCreators() {
                   <div className="p-6">
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        {creator.avatar_url ? (
+                        {creator.avatarUrl ? (
                           <img 
-                            src={creator.avatar_url} 
+                            src={creator.avatarUrl} 
                             alt={creator.name}
                             className="w-16 h-16 rounded-full object-cover"
                           />
@@ -151,14 +170,14 @@ function BrowseCreators() {
                       </div>
                       <div className="flex items-center">
                         <DocumentTextIcon className="h-4 w-4 mr-1" />
-                        <span>{creator.stats?.posts || 0} posts</span>
+                        <span>{creator.stats?.totalPosts || 0} posts</span>
                       </div>
                     </div>
                     
                     <div className="pt-4 border-t">
                       <div className="flex justify-between items-center">
                         <div>
-                          {creator.stats?.hasActivePlan ? (
+                          {creator.plans && creator.plans.length > 0 ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               <StarIcon className="h-3 w-3 mr-1" />
                               Available Plans
