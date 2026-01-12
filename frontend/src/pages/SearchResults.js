@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { searchAPI } from '../services/api'; // ✅ pakai searchAPI, bukan creatorAPI
 import { 
@@ -20,13 +20,9 @@ function SearchResults() {
   });
   const [activeTab, setActiveTab] = useState('all');
 
-  useEffect(() => {
-    if (query) {
-      fetchSearchResults();
-    }
-  }, [query]);
-
-  const fetchSearchResults = async () => {
+  const fetchSearchResults = useCallback(async () => {
+    if (!query) return;
+    
     setLoading(true);
     try {
       const response = await searchAPI.search({ 
@@ -44,7 +40,11 @@ function SearchResults() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [query]);
+
+  useEffect(() => {
+    fetchSearchResults();
+  }, [fetchSearchResults]);
 
   const getFileIcon = (type) => {
     switch(type) {
