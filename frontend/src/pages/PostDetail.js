@@ -435,7 +435,7 @@ function PostDetail() {
             <div className="w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-8">
               <LockClosedIcon className="h-16 w-16 text-purple-600" />
             </div>
-            
+
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Exclusive Content</h1>
             
             <p className="text-lg text-gray-600 mb-6">
@@ -656,49 +656,60 @@ function PostDetail() {
                 </div>
               )}
 
-              {/* Media Display - BAGIAN YANG DIPERBAIKI */}
-              {mediaUrls.length > 0 ? (
-                <div className="mb-8">
-                  {post.type === 'video' ? (
-                    <div className="w-full bg-black rounded-xl overflow-hidden shadow-xl mb-4">
-                      <video 
-                        src={mediaUrls[0]} 
-                        controls 
-                        className="w-full h-auto max-h-[70vh]"
-                        controlsList="nodownload"
-                        crossOrigin="anonymous"
-                        preload="metadata"
-                        onError={(e) => {
-                          console.error('Video load error:', e);
-                          console.error('Video src:', mediaUrls[0]);
-                        }}
-                      >
-                        Your browser does not support the video tag.
-                        <source src={mediaUrls[0]} type="video/mp4" />
-                      </video>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {mediaUrls.map((url, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={url}
-                            alt={`Post media ${index + 1}`}
-                            className="rounded-xl shadow-md w-full h-auto object-cover max-h-[70vh]"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition duration-200 rounded-xl"></div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {/* Media Display */}
+              {hasAccess ? (
+                mediaUrls.length > 0 ? (
+                  <div className="mb-8">
+                    {post.type === 'video' ? (
+                      <div className="w-full bg-black rounded-xl overflow-hidden shadow-xl mb-4">
+                        <video 
+                          src={mediaUrls[0]} 
+                          controls 
+                          className="w-full h-auto max-h-[70vh]"
+                          controlsList="nodownload"
+                          crossOrigin="anonymous"
+                          preload="metadata"
+                        >
+                          Your browser does not support the video tag.
+                          <source src={mediaUrls[0]} type="video/mp4" />
+                        </video>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        {mediaUrls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Post media ${index + 1}`}
+                              className="rounded-xl shadow-md w-full h-auto object-cover max-h-[70vh]"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Available';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition duration-200 rounded-xl"></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mb-8 bg-gray-100 rounded-xl p-12 text-center">
+                    <p className="text-gray-500">No media available</p>
+                  </div>
+                )
               ) : (
-                <div className="mb-8 bg-gray-100 rounded-xl p-12 text-center">
-                  <p className="text-gray-500">No media available</p>
+                <div className="max-w-2xl mx-auto text-center">
+                  <div className="w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <LockClosedIcon className="h-16 w-16 text-purple-600" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-4">Exclusive Content</h1>
+                  <p className="text-lg text-gray-600 mb-6">
+                    This post is only available to subscribers of{' '}
+                    <span className="font-semibold text-purple-600">
+                      {creator?.name || 'this creator'}
+                    </span>
+                  </p>
                 </div>
               )}
 
@@ -757,13 +768,22 @@ function PostDetail() {
               {/* Content */}
               <div className="prose prose-lg max-w-none">
                 <div className="text-gray-800 whitespace-pre-line leading-relaxed text-lg">
-                  {post.content || (
-                    <p className="text-gray-500 italic">No content available.</p>
+                  {hasAccess ? (
+                    post.content || (
+                      <p className="text-gray-500 italic">No content available.</p>
+                    )
+                  ) : (
+                    <div className="text-center py-12">
+                      <LockClosedIcon className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                      <p className="text-gray-600">
+                        Exclusive content. Subscribe to {creator?.name || 'this creator'} to unlock.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
-
+            
             {/* Comments Section */}
             <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
@@ -771,117 +791,129 @@ function PostDetail() {
                 Comments ({commentCount})
               </h3>
 
-              {/* Add Comment */}
-              {user ? (
-                <form onSubmit={handleCommentSubmit} className="mb-8">
-                  <div className="flex space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                        {user.avatar_url || user.avatar ? (
-                          <img 
-                            src={user.avatar_url || user.avatar} 
-                            alt={user.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <UserIcon className="h-5 w-5 text-blue-600" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <textarea
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        rows="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
-                        maxLength={1000}
-                      />
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm text-gray-500">
-                          {newComment.length}/1000 characters
-                        </span>
-                        <button
-                          type="submit"
-                          disabled={postingComment || !newComment.trim()}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {postingComment ? 'Posting...' : 'Post Comment'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-4 mb-6 text-center">
-                  <p className="text-gray-600 mb-3">
-                    Please login to leave a comment
-                  </p>
-                  <button
-                    onClick={() => navigate('/login')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
-                  >
-                    Login
-                  </button>
-                </div>
-              )}
-
-              {/* Comments List */}
-              <div className="space-y-6">
-                {comments.length > 0 ? (
-                  comments.map((comment) => (
-                    <div key={comment.id} className="flex space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          {comment.user?.avatar_url || comment.user?.avatar ? (
-                            <img 
-                              src={comment.user.avatar_url || comment.user.avatar} 
-                              alt={comment.user?.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <UserIcon className="h-5 w-5 text-gray-600" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <span className="font-medium text-gray-900">
-                                {comment.user?.name || 'Anonymous'}
-                              </span>
-                              <span className="text-xs text-gray-500 ml-2">
-                                {formatTimeAgo(comment.created_at || comment.createdAt)}
-                              </span>
-                            </div>
-                            {comment.user?.id === user?.id && (
-                              <button className="text-xs text-gray-500 hover:text-red-600">
-                                Delete
-                              </button>
+              {hasAccess ? (
+                <>
+                  {/* Add Comment */}
+                  {user ? (
+                    <form onSubmit={handleCommentSubmit} className="mb-8">
+                      <div className="flex space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                            {user.avatar_url || user.avatar ? (
+                              <img 
+                                src={user.avatar_url || user.avatar} 
+                                alt={user.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <UserIcon className="h-5 w-5 text-blue-600" />
                             )}
                           </div>
-                          <p className="text-gray-800">{comment.content}</p>
-                          <div className="flex items-center space-x-4 mt-3">
-                            <button className="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-600">
-                              <HandThumbUpIcon className="h-4 w-4" />
-                              <span>{comment.likes || 0}</span>
-                            </button>
-                            <button className="text-sm text-gray-500 hover:text-gray-700">
-                              Reply
+                        </div>
+                        <div className="flex-1">
+                          <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            placeholder="Add a comment..."
+                            rows="3"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                            maxLength={1000}
+                          />
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="text-sm text-gray-500">
+                              {newComment.length}/1000 characters
+                            </span>
+                            <button
+                              type="submit"
+                              disabled={postingComment || !newComment.trim()}
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {postingComment ? 'Posting...' : 'Post Comment'}
                             </button>
                           </div>
                         </div>
                       </div>
+                    </form>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-4 mb-6 text-center">
+                      <p className="text-gray-600 mb-3">Please login to leave a comment</p>
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200"
+                      >
+                        Login
+                      </button>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <ChatBubbleLeftIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500">No comments yet. Be the first to comment!</p>
+                  )}
+
+                  {/* Comments List */}
+                  <div className="space-y-6">
+                    {comments.length > 0 ? (
+                      comments.map((comment) => (
+                        <div key={comment.id} className="flex space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              {comment.user?.avatar_url || comment.user?.avatar ? (
+                                <img 
+                                  src={comment.user.avatar_url || comment.user.avatar} 
+                                  alt={comment.user?.name}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <UserIcon className="h-5 w-5 text-gray-600" />
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="bg-gray-50 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <span className="font-medium text-gray-900">
+                                    {comment.user?.name || 'Anonymous'}
+                                  </span>
+                                  <span className="text-xs text-gray-500 ml-2">
+                                    {formatTimeAgo(comment.created_at || comment.createdAt)}
+                                  </span>
+                                </div>
+                                {comment.user?.id === user?.id && (
+                                  <button className="text-xs text-gray-500 hover:text-red-600">
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-gray-800">{comment.content}</p>
+                              <div className="flex items-center space-x-4 mt-3">
+                                <button className="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-600">
+                                  <HandThumbUpIcon className="h-4 w-4" />
+                                  <span>{comment.likes || 0}</span>
+                                </button>
+                                <button className="text-sm text-gray-500 hover:text-gray-700">
+                                  Reply
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <ChatBubbleLeftIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-500">No comments yet. Be the first to comment!</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <LockClosedIcon className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                  <p className="text-gray-600">
+                    Comments are only available to subscribers of{' '}
+                    <span className="font-semibold text-purple-600">
+                      {creator?.name || 'this creator'}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
