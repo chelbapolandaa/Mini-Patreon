@@ -127,7 +127,7 @@ transactions
 PORT=5000
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=creator_platform
+DB_NAME=mini_patreon
 DB_USER=postgres
 DB_PASSWORD=your_password
 
