@@ -58,11 +58,11 @@ const getPosts = async (req, res) => {
   }
 };
 
-// @desc    Get single post by ID
-// @route   GET /api/posts/:id
-// @access  Public/Protected (depending on visibility)
 const getPostById = async (req, res) => {
   try {
+    console.log('➡️ Incoming request for postId:', req.params.id);
+    console.log('➡️ Current user from JWT:', req.user?.id);
+
     const post = await Post.findByPk(req.params.id, {
       include: [{
         model: User,
@@ -72,64 +72,88 @@ const getPostById = async (req, res) => {
     });
 
     if (!post) {
+      console.log('❌ Post not found');
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
+
+    console.log('✅ Post found:', post.id, 'creatorId:', post.creatorId, 'creator.id:', post.creator?.id);
 
     let hasAccess = true;
     let isSubscribed = false;
 
-    // Check access for subscribers-only posts
-    if (post.visibility === 'subscribers_only') {
+    // cek akses untuk post subscription
+    if (post.visibility === 'subscribers' || post.visibility === 'subscribers_only') {
       if (!req.user) {
+        console.log('⚠️ No user, guest access denied');
         hasAccess = false;
-      } else {
-        // Check if user is the creator
-        if (req.user.id === post.creatorId) {
-          hasAccess = true;
-        } else {
-          // Check if user is subscribed
-          const subscription = await Subscription.findOne({
-            where: {
-              userId: req.user.id,
-              creatorId: post.creatorId,
-              status: 'active'
-            }
-          });
-          
-          hasAccess = !!subscription;
-          isSubscribed = !!subscription;
-        }
+      } else if (req.user.id !== post.creatorId) {
+        console.log('🔍 Checking subscription for user:', req.user.id, 'creator:', post.creatorId);
+
+        const subscription = await Subscription.findOne({
+          where: {
+            userId: req.user.id,
+            creatorId: post.creatorId,
+            status: 'active'
+          }
+        });
+
+        console.log('📦 Subscription query result:', subscription);
+
+        hasAccess = !!subscription;
+        isSubscribed = !!subscription;
       }
     }
 
-    // If user has access, increment view count
+    // increment view count hanya kalau punya akses
     if (hasAccess) {
       await post.increment('view_count');
+      console.log('👁 View count incremented for post:', post.id);
     }
 
-    // Check if current user has liked the post
+    // cek apakah user sudah like
     let userLiked = false;
     if (req.user) {
       const like = await PostLike.findOne({
         where: { postId: post.id, userId: req.user.id }
       });
       userLiked = !!like;
+      console.log('👍 User liked?', userLiked);
     }
 
-    res.json({
+    // bentuk respons aman
+    const safePost = {
+      id: post.id,
+      title: post.title,
+      excerpt: post.excerpt,
+      type: post.type,
+      visibility: post.visibility,
+      creatorId: post.creatorId,
+      creator: post.creator,
+      created_at: post.created_at,
+      updated_at: post.updated_at,
+      likesCount: post.likesCount,
+      commentsCount: post.commentsCount,
+      userLiked
+    };
+
+    if (hasAccess) {
+      safePost.content = post.content;
+      safePost.mediaUrls = post.mediaUrls;
+    }
+
+    console.log('✅ Final access check:', { hasAccess, isSubscribed });
+
+    return res.json({
       success: true,
       data: {
-        post: {
-          ...post.toJSON(),
-          userLiked
-        },
+        post: safePost,
         hasAccess,
         isSubscribed
       }
     });
 
   } catch (error) {
-    console.error('Get post by ID error:', error);
+    console.error('💥 Get post by ID error:', error);
     res.status(500).json({ success: false, message: 'Error fetching post' });
   }
 };
@@ -689,5 +713,5 @@ module.exports = {
   deleteComment,
   checkPostAccess,
   incrementViewCount,
-  getPublicPosts
+  getPublicPosts,
 };
