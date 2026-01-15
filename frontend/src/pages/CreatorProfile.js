@@ -272,56 +272,75 @@ function CreatorProfile() {
 
         {activeTab === 'posts' && (
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Creator Posts</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Creator Posts</h2>
+
             {posts.length === 0 ? (
               <div className="bg-white rounded-xl shadow p-8 text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
                 <p className="text-gray-600">This creator hasn't published any posts.</p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="grid md:grid-cols-3 gap-8">
                 {posts.map((post) => (
-                  <div key={post.id} className="bg-white rounded-xl shadow p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">{post.title}</h3>
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          post.visibility === 'public'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-purple-100 text-purple-700'
-                        }`}
-                      >
-                        {post.visibility === 'public' ? 'Public' : 'Subscribers only'}
-                      </span>
-                    </div>
-                    {post.excerpt ? (
-                      <p className="text-gray-700">{post.excerpt}</p>
-                    ) : (
-                      <p className="text-gray-700 line-clamp-3">{post.content}</p>
-                    )}
+                  <div
+                    key={post.id}
+                    className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
+                  >
+                    {/* Media preview */}
+                    <button
+                      onClick={() => navigate(`/posts/${post.id}`)}
+                      className="block w-full text-left"
+                    >
+                      {post.type === 'video' && post.mediaUrls.length > 0 ? (
+                        <video controls className="w-full h-64 object-cover">
+                          <source src={post.mediaUrls[0]} type="video/mp4" />
+                        </video>
+                      ) : post.mediaUrls.length > 0 ? (
+                        <img
+                          src={post.mediaUrls[0]}
+                          alt={post.title}
+                          className="w-full h-64 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-500">
+                          No media
+                        </div>
+                      )}
+                    </button>
 
-                    {Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0 && (
-                      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {post.mediaUrls.slice(0, 6).map((url, idx) => (
-                          <img
-                            key={idx}
-                            src={url}
-                            alt={`media-${idx}`}
-                            className="w-full h-32 object-cover rounded"
-                          />
-                        ))}
+                    {/* Post content */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">{post.title}</h3>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            post.visibility === 'public'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          {post.visibility === 'public' ? 'Public' : 'Subscribers only'}
+                        </span>
                       </div>
-                    )}
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <button
-                        onClick={() => navigate(`/posts/${post.id}`)}
-                        className="text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        View details
-                      </button>
-                      <div className="text-sm text-gray-500">
-                        {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : ''}
+                      {post.excerpt ? (
+                        <p className="text-gray-700 mb-2">{post.excerpt}</p>
+                      ) : (
+                        <p className="text-gray-700 line-clamp-3 mb-2">{post.content}</p>
+                      )}
+
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <button
+                          onClick={() => navigate(`/posts/${post.id}`)}
+                          className="text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          View details
+                        </button>
+                        <span>
+                          {post.created_at
+                            ? new Date(post.created_at).toLocaleDateString('id-ID')
+                            : ''}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -330,6 +349,7 @@ function CreatorProfile() {
             )}
           </div>
         )}
+
       </div>
     </div>
   );
