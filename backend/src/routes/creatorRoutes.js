@@ -22,7 +22,6 @@ router.get('/:id/posts', async (req, res) => {
       where: {
         creator_id: creatorId,
         is_published: true,
-        visibility: 'public'   // hanya post publik
       },
       order: [['created_at', 'DESC']]
     });

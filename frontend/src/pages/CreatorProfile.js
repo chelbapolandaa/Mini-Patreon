@@ -291,19 +291,25 @@ function CreatorProfile() {
                       onClick={() => navigate(`/posts/${post.id}`)}
                       className="block w-full text-left"
                     >
-                      {post.type === 'video' && post.mediaUrls.length > 0 ? (
-                        <video controls className="w-full h-64 object-cover">
-                          <source src={post.mediaUrls[0]} type="video/mp4" />
-                        </video>
-                      ) : post.mediaUrls.length > 0 ? (
-                        <img
-                          src={post.mediaUrls[0]}
-                          alt={post.title}
-                          className="w-full h-64 object-cover"
-                        />
+                      {post.visibility === 'public' || isSubscribed ? (
+                        post.type === 'video' && post.mediaUrls.length > 0 ? (
+                          <video controls className="w-full h-64 object-cover">
+                            <source src={post.mediaUrls[0]} type="video/mp4" />
+                          </video>
+                        ) : post.mediaUrls.length > 0 ? (
+                          <img
+                            src={post.mediaUrls[0]}
+                            alt={post.title}
+                            className="w-full h-64 object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-500">
+                            No media
+                          </div>
+                        )
                       ) : (
-                        <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-500">
-                          No media
+                        <div className="w-full h-64 bg-gray-100 flex items-center justify-center text-gray-500">
+                          Exclusive content – subscribe to view
                         </div>
                       )}
                     </button>
@@ -349,7 +355,6 @@ function CreatorProfile() {
             )}
           </div>
         )}
-
       </div>
     </div>
   );
