@@ -12,9 +12,10 @@ const {
 } = require('../controllers/creatorController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const Post = require('../models/Post');
+const Subscription = require('../models/Subscription');
 
 // ================== Public route ==================
-// Get published PUBLIC posts by creatorId
+// Get all published posts by creatorId (public + subs)
 router.get('/:id/posts', async (req, res) => {
   try {
     const creatorId = req.params.id;
@@ -26,6 +27,24 @@ router.get('/:id/posts', async (req, res) => {
       order: [['created_at', 'DESC']]
     });
     res.json({ success: true, data: posts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ================== Subscription check route ==================
+// Check if current user is subscribed to a creator
+router.get('/:id/is-subscribed', protect, async (req, res) => {
+  try {
+    const creatorId = req.params.id;
+    const userId = req.user.id;
+
+    const subscription = await Subscription.findOne({
+      where: { creator_id: creatorId, user_id: userId, status: 'active' }
+    });
+
+    res.json({ success: true, isSubscribed: !!subscription });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error' });
