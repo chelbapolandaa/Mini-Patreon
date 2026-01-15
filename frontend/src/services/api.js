@@ -18,9 +18,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor untuk handle errors
@@ -36,36 +34,21 @@ api.interceptors.response.use(
   }
 );
 
-// **PERBAIKAN: Upload API yang benar**
+// ================== Upload API ==================
 export const uploadAPI = {
-  // Upload single file ke endpoint yang benar
-  uploadFile: async (formData) => {
-    const response = await api.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      }
-    });
-    return response.data;
-  },
-  
-  // Upload multiple files
-  uploadMultipleFiles: async (formData) => {
-    const response = await api.post('/upload/multiple', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      }
-    });
-    return response.data;
-  },
-  
-  // Delete uploaded file
-  deleteFile: async (filename, type = 'files') => {
-    const response = await api.delete(`/upload/${filename}?type=${type}`);
-    return response.data;
-  }
+  uploadFile: (formData) =>
+    api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  uploadMultipleFiles: (formData) =>
+    api.post('/upload/multiple', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  deleteFile: (filename, type = 'files') =>
+    api.delete(`/upload/${filename}?type=${type}`),
 };
 
-// Auth API functions
+// ================== Auth API ==================
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
@@ -73,141 +56,103 @@ export const authAPI = {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     return Promise.resolve();
-  }
+  },
 };
 
-// Post API functions (Public & Protected)
+// ================== Post API ==================
 export const postAPI = {
-  // Get single post (public/private access handled by backend)
   getPostById: (postId) => api.get(`/posts/${postId}`),
-  
-  // Get posts for creator (protected)
-  getPostsByCreator: (creatorId, params) => api.get(`/creators/${creatorId}/posts`, { params }),
-  
-  // Get public posts for feed
   getPublicPosts: (params) => api.get('/posts/public', { params }),
-  
-  // Like/unlike post
-  likePost: (postId) => api.post(`/posts/${postId}/like`),
-  unlikePost: (postId) => api.delete(`/posts/${postId}/like`),
-  
-  // Comments
-  getPostComments: (postId) => api.get(`/posts/${postId}/comments`),
-  addComment: (postId, data) => api.post(`/posts/${postId}/comments`, data),
-  
-  // **TAMBAHKAN: Create post untuk semua user (bukan hanya creator)**
   createPost: (data) => api.post('/posts', data),
-  
-  // **TAMBAHKAN: Update dan delete untuk user biasa**
   updatePost: (id, data) => api.put(`/posts/${id}`, data),
   deletePost: (id) => api.delete(`/posts/${id}`),
+  likePost: (postId) => api.post(`/posts/${postId}/like`),
+  unlikePost: (postId) => api.delete(`/posts/${postId}/like`),
+  getPostComments: (postId) => api.get(`/posts/${postId}/comments`),
+  addComment: (postId, data) => api.post(`/posts/${postId}/comments`, data),
 };
 
-// Creator API functions
+// ================== Creator API ==================
 export const creatorAPI = {
   // Dashboard
   getCreatorStats: () => api.get('/creators/dashboard/stats'),
-  
-  // Posts (creator-specific endpoints - ini yang sudah ada)
+
+  // Posts (dashboard only)
   createPost: (data) => api.post('/creators/posts', data),
   getMyPosts: (params) => api.get('/creators/posts', { params }),
   getPostById: (id) => api.get(`/creators/posts/${id}`),
   updatePost: (id, data) => api.put(`/creators/posts/${id}`, data),
   deletePost: (id) => api.delete(`/creators/posts/${id}`),
-  updatePostStatus: (id, status) => api.put(`/creators/posts/${id}/status`, { status }),
-  
-  // Subscription Plans
+  updatePostStatus: (id, status) =>
+    api.put(`/creators/posts/${id}/status`, { status }),
+
+  // Plans
   createPlan: (data) => api.post('/creators/plans', data),
   getMyPlans: () => api.get('/creators/plans'),
   updatePlan: (id, data) => api.put(`/creators/plans/${id}`, data),
   deletePlan: (id) => api.delete(`/creators/plans/${id}`),
-  
+
   // Subscribers
   getMySubscribers: (params) => api.get('/creators/subscribers', { params }),
   getSubscriberStats: () => api.get('/creators/subscribers/stats'),
-  
+
   // Profile
   getMyProfile: () => api.get('/creators/profile'),
   updateMyProfile: (data) => api.put('/creators/profile', data),
-  updateAvatar: (formData) => api.post('/creators/profile/avatar', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
-  
+  updateAvatar: (formData) =>
+    api.post('/creators/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
   // Analytics
   getAnalytics: (period) => api.get(`/creators/analytics?period=${period}`),
 };
 
-// Subscription API functions
+// ================== Subscription API ==================
 export const subscriptionAPI = {
-  // Browse creators
   getCreators: (params) => api.get('/creators', { params }),
-  
-  // Creator profile
   getCreatorProfile: (id) => api.get(`/creators/${id}/profile`),
-  
-  // Creator's posts (public only)
-  getCreatorPosts: (creatorId, params) => api.get(`/creators/${creatorId}/posts`, { params }),
-  
-  // Creator's plans
+  getCreatorPostsPublic: (creatorId, params) =>
+    api.get(`/creators/${creatorId}/posts`, { params }),
   getCreatorPlans: (creatorId) => api.get(`/creators/${creatorId}/plans`),
-  
-  // Subscription flow
+
   initializeSubscription: (data) => api.post('/subscriptions/initialize', data),
-  checkPaymentStatus: (orderId) => api.get(`/subscriptions/status/${orderId}`),
-  
-  // User subscriptions
+  checkPaymentStatus: (orderId) =>
+    api.get(`/subscriptions/status/${orderId}`),
   getMySubscriptions: () => api.get('/subscriptions/my'),
   cancelSubscription: (id) => api.put(`/subscriptions/${id}/cancel`),
-  
-  // Check if user has access to post
+
   checkPostAccess: (postId) => api.get(`/subscriptions/posts/${postId}/access`),
-  
-  // Check subscription status
-  checkSubscriptionStatus: (creatorId) => api.get(`/subscriptions/check/${creatorId}`),
-  
-  // Subscribe
-  subscribe: (creatorId, planId) => api.post(`/subscriptions/${creatorId}/subscribe`, { planId }),
+  checkSubscriptionStatus: (creatorId) =>
+    api.get(`/subscriptions/check/${creatorId}`),
+  subscribe: (creatorId, planId) =>
+    api.post(`/subscriptions/${creatorId}/subscribe`, { planId }),
 };
 
-// User API functions
+// ================== User API ==================
 export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
-  updateAvatar: (formData) => api.post('/users/profile/avatar', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
-  
-  // Bookmarks
+  updateAvatar: (formData) =>
+    api.post('/users/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   getBookmarks: () => api.get('/users/bookmarks'),
   addBookmark: (postId) => api.post(`/users/bookmarks/${postId}`),
   removeBookmark: (postId) => api.delete(`/users/bookmarks/${postId}`),
-  
-  // Notifications
   getNotifications: () => api.get('/users/notifications'),
-  markNotificationAsRead: (id) => api.put(`/users/notifications/${id}/read`),
+  markNotificationAsRead: (id) =>
+    api.put(`/users/notifications/${id}/read`),
   markAllNotificationsAsRead: () => api.put('/users/notifications/read-all'),
 };
 
-// Search API (general)
+// ================== Search API ==================
 export const searchAPI = {
-  // Global search
   search: (params) => api.get('/search', { params }),
-  
-  // Search creators only
   searchCreators: (params) => api.get('/search/creators', { params }),
-  
-  // Search posts only
   searchPosts: (params) => api.get('/search/posts', { params }),
-  
-  // Trending
   getTrendingCreators: () => api.get('/search/trending/creators'),
   getTrendingPosts: () => api.get('/search/trending/posts'),
 };
-
-// **HAPUS yang duplikat di bawah ini karena sudah ada di atas**
 
 export default api;
