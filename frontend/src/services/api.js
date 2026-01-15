@@ -121,7 +121,8 @@ export const subscriptionAPI = {
     api.get(`/subscriptions/status/${orderId}`),
   getMySubscriptions: () => api.get('/subscriptions/my'),
   cancelSubscription: (id) => api.put(`/subscriptions/${id}/cancel`),
-
+  checkIsSubscribed: (creatorId) =>
+    api.get(`/creators/${creatorId}/is-subscribed`),
   checkPostAccess: (postId) => api.get(`/subscriptions/posts/${postId}/access`),
   checkSubscriptionStatus: (creatorId) =>
     api.get(`/subscriptions/check/${creatorId}`),
