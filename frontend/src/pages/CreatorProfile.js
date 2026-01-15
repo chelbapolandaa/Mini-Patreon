@@ -38,7 +38,7 @@ function CreatorProfile() {
 
   const fetchCreatorPosts = useCallback(async () => {
     try {
-      const response = await subscriptionAPI.getCreatorPosts(id);
+      const response = await subscriptionAPI.getCreatorPostsPublic(id);
       setPosts(response.data.data || []);
     } catch (error) {
       toast.error('Failed to load posts');
