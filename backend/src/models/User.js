@@ -75,7 +75,6 @@ const User = sequelize.define('User', {
   }
 });
 
-// ========== ASSOCIATIONS ==========
 User.associate = function(models) {
   // User as subscriber (membeli subscription)
   User.hasMany(models.Subscription, {
