@@ -286,10 +286,12 @@ function CreatorProfile() {
                       <h3 className="text-xl font-bold text-gray-900">{post.title}</h3>
                       <span
                         className={`text-xs px-2 py-1 rounded ${
-                          post.isPublic ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
+                          post.visibility === 'public'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-purple-100 text-purple-700'
                         }`}
                       >
-                        {post.isPublic ? 'Public' : 'Subscribers only'}
+                        {post.visibility === 'public' ? 'Public' : 'Subscribers only'}
                       </span>
                     </div>
                     {post.excerpt ? (
@@ -298,7 +300,6 @@ function CreatorProfile() {
                       <p className="text-gray-700 line-clamp-3">{post.content}</p>
                     )}
 
-                    {/* Optional media preview */}
                     {Array.isArray(post.mediaUrls) && post.mediaUrls.length > 0 && (
                       <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                         {post.mediaUrls.slice(0, 6).map((url, idx) => (
@@ -320,7 +321,7 @@ function CreatorProfile() {
                         View details
                       </button>
                       <div className="text-sm text-gray-500">
-                        {post.createdAt ? new Date(post.createdAt).toLocaleDateString('id-ID') : ''}
+                        {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : ''}
                       </div>
                     </div>
                   </div>
