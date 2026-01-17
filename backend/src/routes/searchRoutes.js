@@ -7,7 +7,6 @@ const {
   CreatorProfile 
 } = require('../models');
 
-// GET /api/search
 router.get('/', async (req, res) => {
   try {
     const { q: query, limit = 20 } = req.query;
@@ -47,7 +46,7 @@ router.get('/', async (req, res) => {
       limit: limit ? parseInt(limit) : 20
     });
 
-    // Search posts - SEKARANG DENGAN FIELD LENGKAP
+    // Search posts
     const posts = await Post.findAll({
       where: {
         is_published: true,
