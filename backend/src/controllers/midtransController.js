@@ -60,7 +60,7 @@ const handleMidtransNotification = async (req, res) => {
       signature_key
     } = notification;
     
-    // Validasi required fields
+    // Validation required fields
     if (!order_id || !transaction_status) {
       console.error('❌ Missing required fields in notification');
       await t.rollback();
