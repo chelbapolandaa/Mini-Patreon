@@ -121,7 +121,6 @@ const resetPassword = async (req, res) => {
   });
 };
 
-// Export semua function
 module.exports = {
   register,
   login,
