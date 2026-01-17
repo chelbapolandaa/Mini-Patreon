@@ -17,7 +17,7 @@ function CreatorProfile() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [activeTab, setActiveTab] = useState('plans'); // 'plans' atau 'posts'
+  const [activeTab, setActiveTab] = useState('plans');
 
   const fetchCreatorProfile = useCallback(async () => {
     try {
@@ -26,7 +26,6 @@ function CreatorProfile() {
       const response = await subscriptionAPI.getCreatorProfile(id);
       setCreator(response.data.data);
       setPlans(response.data.data.plans || []);
-      setIsSubscribed(response.data.isSubscribed || false);
     } catch (error) {
       toast.error('Failed to load creator profile');
       console.error('Error fetching creator profile:', error);
@@ -38,13 +37,14 @@ function CreatorProfile() {
 
   const fetchCreatorPosts = useCallback(async () => {
     try {
-      const response = await subscriptionAPI.getCreatorPostsPublic(id);
+      const response = await subscriptionAPI.getCreatorPosts(id);
       setPosts(response.data.data || []);
     } catch (error) {
       toast.error('Failed to load posts');
       console.error('Error fetching posts:', error);
     }
   }, [id]);
+
 
   useEffect(() => {
     fetchCreatorProfile();
@@ -55,6 +55,19 @@ function CreatorProfile() {
       fetchCreatorPosts();
     }
   }, [activeTab, fetchCreatorPosts]);
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const response = await subscriptionAPI.checkIsSubscribed(id);
+        setIsSubscribed(response.data.isSubscribed);
+      } catch (err) {
+        setIsSubscribed(false);
+      }
+    };
+
+    checkSubscription();
+  }, [id]);
 
   const handleSubscribe = async (plan) => {
     setSelectedPlan(plan);
