@@ -181,7 +181,7 @@ POST /api/payments/midtrans/webhook - Midtrans payment notification
 
 ## 🎥 Demo
 <p align="center">
-<video src="./demo/Demo.mp4" controls width="800"></video>
+<img src="./demo/Demo.gif" alt="Creator Subscription Platform Demo" width="800"/>
 </p>
 
 **Demo Flow:**
@@ -189,35 +189,6 @@ POST /api/payments/midtrans/webhook - Midtrans payment notification
 - Create subscription plan
 - User checkout via Midtrans (Sandbox)
 - Successful payment & content unlock
-
-## 📸 Screenshots
-<div align="center">
-
-### Home
-<img src="./screenshots/home.png" alt="Home" width="800"/>
-
-### Dashboard
-<img src="./screenshots/dashboard.png" alt="Dashboard" width="800"/>
-
-### Dashboard Posts
-<img src="./screenshots/dashboard-post.png" alt="Dashboard Post" width="800"/>
-
-### Create Post
-<img src="./screenshots/create-post.png" alt="Create Post" width="800"/>
-
-### Dashboard Plan
-<img src="./screenshots/dashboard-plan.png" alt="Dashboard Plan" width="800"/>
-
-### Create Post
-<img src="./screenshots/create-plan.png" alt="Create Plan" width="800"/>
-
-### Login
-<img src="./screenshots/login.png" alt="Login" width="800"/>
-
-### Register
-<img src="./screenshots/register.png" alt="Register" width="800"/>
-
-</div>
 
 ## 📄 License
 
