@@ -18,6 +18,8 @@ import BrowseCreators from './pages/BrowseCreators';
 import CreatorProfile from './pages/CreatorProfile';
 import PaymentStatus from './pages/PaymentStatus';
 import SearchResults from './pages/SearchResults';
+import MySubscriptions from './pages/MySubscriptions';
+
 import './index.css';
 
 // Protected Route Component
@@ -130,6 +132,16 @@ function App() {
                 } 
               />
               
+
+              <Route 
+                path="/subscriptions/my" 
+                element={
+                  <ProtectedRoute>
+                    <MySubscriptions />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* Payment Status */}
               <Route 
                 path="/subscription/status" 
