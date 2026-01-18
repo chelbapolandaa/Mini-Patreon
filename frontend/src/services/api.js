@@ -115,7 +115,7 @@ export const subscriptionAPI = {
   getCreatorPostsPublic: (creatorId, params) =>
     api.get(`/creators/${creatorId}/posts`, { params }),
   getCreatorPlans: (creatorId) => api.get(`/creators/${creatorId}/plans`),
-
+  getCreatorPosts: (creatorId) => api.get(`/creators/${creatorId}/posts`),
   initializeSubscription: (data) => api.post('/subscriptions/initialize', data),
   checkPaymentStatus: (orderId) =>
     api.get(`/subscriptions/status/${orderId}`),
