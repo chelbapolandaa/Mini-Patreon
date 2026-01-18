@@ -179,6 +179,17 @@ GET /api/subscriptions/my - Get user's subscriptions
 ### Webhook
 POST /api/payments/midtrans/webhook - Midtrans payment notification
 
+## 🎥 Demo
+<p align="center">
+<video src="./demo/Demo.mp4" controls width="800"></video>
+</p>
+
+**Demo Flow:**
+- Creator login & dashboard
+- Create subscription plan
+- User checkout via Midtrans (Sandbox)
+- Successful payment & content unlock
+
 ## 📸 Screenshots
 <div align="center">
 
