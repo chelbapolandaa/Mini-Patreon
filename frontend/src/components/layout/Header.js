@@ -8,6 +8,8 @@ function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  console.log('Auth user:', user);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -38,6 +40,16 @@ function Header() {
                   </Link>
                 </>
               )}
+
+              {user?.role === 'user' && (
+                <Link 
+                  to="/subscriptions/my" 
+                  className="text-gray-600 hover:text-blue-600 transition text-sm"
+                >
+                  Manage Subscriptions
+                </Link>
+              )}
+
             </nav>
           </div>
 
@@ -107,10 +119,14 @@ function Header() {
             )}
             
             {user?.role === 'user' && (
-              <Link to="/dashboard" className="text-gray-600 hover:text-blue-600 transition text-sm whitespace-nowrap">
-                Subscriptions
+              <Link 
+                to="/subscriptions/my" 
+                className="hidden md:inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1.5 px-4 rounded-lg transition duration-200"
+              >
+                Manage Subscriptions
               </Link>
             )}
+
           </nav>
         </div>
       </div>
