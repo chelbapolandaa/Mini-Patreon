@@ -163,6 +163,40 @@ function PostDetail() {
     }
   }, [id, fetchPost]);
 
+  useEffect(() => {
+    if (!post) return;
+
+    if (post.visibility === 'public') {
+      setHasAccess(true);
+    } else if (
+      isSubscribed &&
+      (post.visibility === 'subscribers' || post.visibility === 'subscribers_only')
+    ) {
+      setHasAccess(true);
+    } else {
+      setHasAccess(false);
+    }
+
+    setCheckingAccess(false);
+  }, [post, isSubscribed]);
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const response = await subscriptionAPI.checkIsSubscribed(post.creatorId);
+        setIsSubscribed(response.data.isSubscribed);
+      } catch (err) {
+        setIsSubscribed(false);
+      }
+    };
+
+    if (post?.creatorId) {
+      checkSubscription();
+    }
+  }, [post?.creatorId]);
+
+
+
   const handleLike = async () => {
     if (!user) {
       toast.error('Please login to like posts');
