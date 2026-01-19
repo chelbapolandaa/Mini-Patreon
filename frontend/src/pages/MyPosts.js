@@ -50,7 +50,7 @@ function MyPosts() {
     try {
       await creatorAPI.deletePost(id);
       toast.success('Post deleted successfully');
-      fetchPosts(); // Refresh the list
+      fetchPosts();
     } catch (error) {
       toast.error('Failed to delete post');
       console.error('Error deleting post:', error);
