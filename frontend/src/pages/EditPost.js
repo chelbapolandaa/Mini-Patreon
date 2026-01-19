@@ -219,10 +219,7 @@ function EditPost() {
       for (let i = 0; i < totalFiles; i++) {
         const file = validFiles[i];
         
-        // Simulate upload progress per file
         setUploadProgress((i / totalFiles) * 100);
-        
-        // Simulate upload delay
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Create FormData for file upload (simulation)
