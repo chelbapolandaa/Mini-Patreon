@@ -72,6 +72,6 @@ module.exports = {
   Transaction,
   WebhookLog,
   CreatorProfile,
-  Comment, // ← TAMBAHKAN
-  PostLike // ← TAMBAHKAN
+  Comment,
+  PostLike
 };
