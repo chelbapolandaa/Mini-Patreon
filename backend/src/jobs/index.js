@@ -1,7 +1,6 @@
 const cron = require('node-cron');
 const { Subscription } = require('../models');
 
-// Check and expire subscriptions daily at midnight
 const expireSubscriptions = cron.schedule('0 0 * * *', async () => {
   try {
     console.log('🔄 Running subscription expiration check...');
