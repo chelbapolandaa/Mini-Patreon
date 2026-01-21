@@ -15,7 +15,6 @@ const Post = require('../models/Post');
 const Subscription = require('../models/Subscription');
 
 // ================== Public route ==================
-// Get all published posts by creatorId (public + subs)
 router.get('/:id/posts', async (req, res) => {
   try {
     const creatorId = req.params.id;
