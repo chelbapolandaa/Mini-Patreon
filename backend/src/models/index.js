@@ -5,8 +5,8 @@ const SubscriptionPlan = require('./SubscriptionPlan');
 const Transaction = require('./Transaction');
 const WebhookLog = require('./WebhookLog');
 const CreatorProfile = require('./CreatorProfile');
-const Comment = require('./Comment'); // ← TAMBAHKAN
-const PostLike = require('./PostLike'); // ← TAMBAHKAN
+const Comment = require('./Comment');
+const PostLike = require('./PostLike');
 
 // User - CreatorProfile (One-to-One)
 User.hasOne(CreatorProfile, { foreignKey: 'userId', as: 'creatorProfile' });
