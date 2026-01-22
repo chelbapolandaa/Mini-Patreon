@@ -15,7 +15,6 @@ function Register() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check URL query for role
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const urlRole = params.get('role');
