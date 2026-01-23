@@ -10,12 +10,11 @@ A mini Patreon-like platform where creators can monetize their content through s
 - **Content Management**: Create posts with visibility control (public/subscribers_only)
 - **Subscription System**: Create plans, subscribe, cancel subscriptions
 - **Payment Integration**: Midtrans payment gateway with webhook handling
+- **Post access control**: locked/unlocked content
+- **Browse creators page**
+- **Admin panel**
+- **Complete payment flow**
 
-### 🚧 In Progress
-- Post access control (locked/unlocked content)
-- Browse creators page
-- Admin panel
-- Complete payment flow
 
 ## 🛠️ Tech Stack
 
