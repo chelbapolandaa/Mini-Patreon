@@ -180,6 +180,7 @@ POST /api/payments/midtrans/webhook - Midtrans payment notification
 
 ## 🎥 Demo
 <p align="center">
+[![Video Demo](https://img.youtube.com/vi/jCgVp2wK9yo/0.jpg)](https://www.youtube.com/watch?v=jCgVp2wK9yo)
 <img src="./demo/Demo.gif" alt="Creator Subscription Platform Demo" width="800"/>
 </p>
 
