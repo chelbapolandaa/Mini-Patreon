@@ -151,7 +151,6 @@ const getCreatorStats = async (req, res) => {
       }]
     });
     
-    // Get recent transactions
     const recentTransactions = await Transaction.findAll({
       where: { creatorId, status: 'success' },
       limit: 10,
