@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { searchAPI } from '../services/api'; // ✅ pakai searchAPI, bukan creatorAPI
+import { searchAPI } from '../services/api';
 import { 
   MagnifyingGlassIcon,
   UserCircleIcon,
