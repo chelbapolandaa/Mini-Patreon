@@ -60,7 +60,6 @@ function CreatePlan() {
       return;
     }
 
-    // Filter out empty features
     const filteredFeatures = formData.features.filter(feature => feature.trim() !== '');
 
     const submitData = {
