@@ -32,7 +32,6 @@ function BrowseCreators() {
       const payload = response.data.data;
       const creatorsList = payload.creators || [];
 
-      // Ambil detail profile untuk setiap creator
       const detailedCreators = await Promise.all(
         creatorsList.map(async (creator) => {
           try {
