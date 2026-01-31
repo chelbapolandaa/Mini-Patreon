@@ -53,7 +53,6 @@ function Header() {
             </nav>
           </div>
 
-          {/* Search Bar - Always Visible */}
           <div className="flex-1 max-w-2xl mx-4">
             <SearchBar />
           </div>
