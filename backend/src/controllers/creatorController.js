@@ -396,7 +396,6 @@ const updatePost = async (req, res) => {
       });
     }
     
-    // Update the post
     if (title !== undefined) post.title = title;
     if (content !== undefined) post.content = content;
     if (excerpt !== undefined) post.excerpt = excerpt;
