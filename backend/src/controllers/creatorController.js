@@ -182,15 +182,12 @@ const getCreatorStats = async (req, res) => {
   }
 };
 
-// @desc    Create a new post
-// @route   POST /api/creators/posts
-// @access  Private (Creator only)
+
 const createPost = async (req, res) => {
   try {
     const { title, content, excerpt, type, visibility, mediaUrls } = req.body;
     const creatorId = req.user.id;
     
-    // Validate required fields
     if (!title || !content) {
       return res.status(400).json({
         success: false,
