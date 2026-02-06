@@ -319,7 +319,6 @@ const createSubscriptionPlan = async (req, res) => {
       });
     }
     
-    // Validate price
     if (price <= 0) {
       return res.status(400).json({
         success: false,
