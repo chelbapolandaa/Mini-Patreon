@@ -62,7 +62,6 @@ const handleWebhook = async (req, res) => {
     const Transaction = require('../models/Transaction');
     const WebhookLog = require('../models/WebhookLog');
     
-    // Log webhook
     await WebhookLog.create({
       eventType: 'payment.notification',
       payload: req.body,
