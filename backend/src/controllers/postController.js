@@ -277,7 +277,6 @@ const updatePost = async (req, res) => {
 
     await post.save();
 
-    // Get updated post with creator info
     const updatedPost = await Post.findByPk(post.id, {
       include: [{
         model: User,
