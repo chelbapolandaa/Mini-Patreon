@@ -457,7 +457,7 @@ const getPostComments = async (req, res) => {
       where: { postId: post.id },
       include: [{
         model: User,
-        as: 'user', // <-- TAMBAHKAN INI
+        as: 'user',
         attributes: ['id', 'name', 'avatar_url']
       }],
       order: [['created_at', 'DESC']],
@@ -524,7 +524,6 @@ const addComment = async (req, res) => {
       userId: req.user.id
     });
 
-    // Increment comment count
     await post.increment('comments_count');
 
     // Get comment with user info
