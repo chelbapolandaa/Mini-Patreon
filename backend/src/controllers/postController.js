@@ -396,7 +396,6 @@ const unlikePost = async (req, res) => {
     // Remove like
     await like.destroy();
 
-    // Decrement like count
     await post.decrement('likes_count');
 
     res.json({
