@@ -370,9 +370,7 @@ const likePost = async (req, res) => {
   }
 };
 
-// @desc    Unlike a post
-// @route   DELETE /api/posts/:id/like
-// @access  Private
+
 const unlikePost = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
@@ -381,7 +379,6 @@ const unlikePost = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    // Find the like
     const like = await PostLike.findOne({
       where: { postId: post.id, userId: req.user.id }
     });
@@ -409,9 +406,7 @@ const unlikePost = async (req, res) => {
   }
 };
 
-// @desc    Get post likes
-// @route   GET /api/posts/:id/likes
-// @access  Public
+
 const getPostLikes = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
@@ -442,9 +437,6 @@ const getPostLikes = async (req, res) => {
   }
 };
 
-// @desc    Get post comments
-// @route   GET /api/posts/:id/comments
-// @access  Public
 const getPostComments = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
@@ -477,9 +469,6 @@ const getPostComments = async (req, res) => {
   }
 };
 
-// @desc    Add comment to post
-// @route   POST /api/posts/:id/comments
-// @access  Private
 const addComment = async (req, res) => {
   try {
     const { content } = req.body;
@@ -635,9 +624,6 @@ const checkPostAccess = async (req, res) => {
   }
 };
 
-// @desc    Increment post view count
-// @route   POST /api/posts/:id/view
-// @access  Public
 const incrementViewCount = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
@@ -660,9 +646,6 @@ const incrementViewCount = async (req, res) => {
   }
 };
 
-// @desc    Get all public posts
-// @route   GET /api/posts/public
-// @access  Public
 const getPublicPosts = async (req, res) => {
   try {
     const posts = await Post.findAll({
