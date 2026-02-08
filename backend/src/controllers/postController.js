@@ -526,7 +526,6 @@ const addComment = async (req, res) => {
 
     await post.increment('comments_count');
 
-    // Get comment with user info
     const commentWithUser = await Comment.findByPk(comment.id, {
       include: [{
         model: User,
