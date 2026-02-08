@@ -572,7 +572,6 @@ const deleteComment = async (req, res) => {
 
     await comment.destroy();
 
-    // Decrement comment count
     await Post.decrement('comments_count', {
       where: { id: comment.postId }
     });
@@ -587,9 +586,6 @@ const deleteComment = async (req, res) => {
   }
 };
 
-// @desc    Check if user has access to post
-// @route   GET /api/posts/:id/access
-// @access  Private
 const checkPostAccess = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
