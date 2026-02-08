@@ -172,7 +172,6 @@ const createPost = async (req, res) => {
         // Filter yang null/undefined dan bukan string
         if (!url || typeof url !== 'string') return false;
         
-        // Filter blob URLs
         if (url.startsWith('blob:')) return false;
         
         // Terima URL yang valid (http/https atau /uploads)
@@ -245,9 +244,6 @@ const createPost = async (req, res) => {
   }
 };
 
-// @desc    Update post
-// @route   PUT /api/posts/:id
-// @access  Private (Creator of the post)
 const updatePost = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
@@ -297,9 +293,6 @@ const updatePost = async (req, res) => {
   }
 };
 
-// @desc    Delete post
-// @route   DELETE /api/posts/:id
-// @access  Private (Creator of the post)
 const deletePost = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
@@ -328,9 +321,6 @@ const deletePost = async (req, res) => {
   }
 };
 
-// @desc    Like a post
-// @route   POST /api/posts/:id/like
-// @access  Private
 const likePost = async (req, res) => {
   try {
     const post = await Post.findByPk(req.params.id);
