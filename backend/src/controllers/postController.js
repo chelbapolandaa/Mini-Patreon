@@ -529,7 +529,7 @@ const addComment = async (req, res) => {
     const commentWithUser = await Comment.findByPk(comment.id, {
       include: [{
         model: User,
-        as: 'user', // <-- TAMBAHKAN INI
+        as: 'user',
         attributes: ['id', 'name', 'avatar_url']
       }]
     });
@@ -546,9 +546,6 @@ const addComment = async (req, res) => {
   }
 };
 
-// @desc    Delete comment
-// @route   DELETE /api/posts/:id/comments/:commentId
-// @access  Private (Comment owner or post creator)
 const deleteComment = async (req, res) => {
   try {
     const comment = await Comment.findByPk(req.params.commentId, {
@@ -562,7 +559,6 @@ const deleteComment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Comment not found' });
     }
 
-    // Check permissions
     const isCommentOwner = comment.userId === req.user.id;
     const isPostCreator = comment.Post.creatorId === req.user.id;
     const isAdmin = req.user.role === 'admin';
