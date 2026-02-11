@@ -172,7 +172,6 @@ const createPost = async (req, res) => {
         
         if (url.startsWith('blob:')) return false;
         
-        // Terima URL yang valid (http/https atau /uploads)
         return url.startsWith('http') || url.startsWith('/uploads') || url.startsWith('data:');
       });
     }
