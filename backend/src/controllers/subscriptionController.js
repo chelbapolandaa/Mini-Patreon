@@ -3,9 +3,7 @@ const snap = require('../config/midtrans');
 const { Op } = require('sequelize');
 const db = require('../models');
 
-// @desc    Get all creators (untuk browsing)
-// @route   GET /api/subscriptions/creators
-// @access  Public
+
 const getAllCreators = async (req, res) => {
   try {
     const { page = 1, limit = 12, search = '' } = req.query;
@@ -69,9 +67,6 @@ const getAllCreators = async (req, res) => {
   }
 };
 
-// @desc    Get creator profile with plans
-// @route   GET /api/subscriptions/creators/:id/profile
-// @access  Public
 const getCreatorProfile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -149,9 +144,6 @@ const getCreatorProfile = async (req, res) => {
   }
 };
 
-// @desc    Initialize subscription payment
-// @route   POST /api/subscriptions/initialize
-// @access  Private
 const initializeSubscription = async (req, res) => {
   try {
     const { planId } = req.body;
@@ -460,7 +452,6 @@ const createSubscriptionFromTransaction = async (transaction) => {
       return existingSubscription;
     }
     
-    // Calculate end date based on plan interval
     const startDate = new Date();
     let endDate = new Date(startDate);
     
@@ -686,9 +677,6 @@ const cancelSubscription = async (req, res) => {
   }
 };
 
-// @desc    Legacy subscription endpoint (for backward compatibility)
-// @route   POST /api/subscriptions/subscribe
-// @access  Private
 const subscribeToCreator = async (req, res) => {
   try {
     const { planId } = req.body;
