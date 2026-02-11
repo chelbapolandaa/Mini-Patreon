@@ -473,7 +473,6 @@ const addComment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    // Check access for subscribers-only posts
     if (post.visibility === 'subscribers_only') {
       if (req.user.id !== post.creatorId) {
         const subscription = await Subscription.findOne({
