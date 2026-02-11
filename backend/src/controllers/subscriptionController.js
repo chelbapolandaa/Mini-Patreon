@@ -610,7 +610,6 @@ const getMySubscriptions = async (req, res) => {
   }
 };
 
-// subscriptionController.js - cancelSubscription
 const cancelSubscription = async (req, res) => {
   try {
     const { id } = req.params; // ← PERHATIKAN: param adalah 'id' bukan 'subscriptionId'
@@ -729,7 +728,7 @@ const subscribeToCreator = async (req, res) => {
 
 module.exports = {
   getCreatorPlans,
-  subscribeToCreator, // ← KEMBALIKAN JIKA MASIH DIPERLUKAN
+  subscribeToCreator,
   getMySubscriptions,
   cancelSubscription,
   getCreators: getAllCreators,
