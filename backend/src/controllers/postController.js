@@ -168,7 +168,6 @@ const createPost = async (req, res) => {
     let validMediaUrls = [];
      if (mediaUrls && Array.isArray(mediaUrls)) {
       validMediaUrls = mediaUrls.filter(url => {
-        // Filter yang null/undefined dan bukan string
         if (!url || typeof url !== 'string') return false;
         
         if (url.startsWith('blob:')) return false;
