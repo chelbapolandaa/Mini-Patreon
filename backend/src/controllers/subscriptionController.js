@@ -612,7 +612,7 @@ const getMySubscriptions = async (req, res) => {
 
 const cancelSubscription = async (req, res) => {
   try {
-    const { id } = req.params; // ← PERHATIKAN: param adalah 'id' bukan 'subscriptionId'
+    const { id } = req.params;
     const userId = req.user.id;
 
     // Cari subscription
@@ -637,7 +637,6 @@ const cancelSubscription = async (req, res) => {
       });
     }
 
-    // Validasi: hanya subscription aktif yang bisa dicancel
     if (subscription.status !== 'active') {
       return res.status(400).json({
         success: false,
