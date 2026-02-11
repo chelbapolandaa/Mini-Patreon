@@ -165,7 +165,6 @@ const createPost = async (req, res) => {
     
     console.log('Create post data:', { title, type, visibility, mediaUrls });
     
-    // Validasi mediaUrls
     let validMediaUrls = [];
      if (mediaUrls && Array.isArray(mediaUrls)) {
       validMediaUrls = mediaUrls.filter(url => {
