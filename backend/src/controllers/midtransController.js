@@ -19,9 +19,6 @@ const verifySignature = (orderId, statusCode, grossAmount, serverKey) => {
   }
 };
 
-/**
- * Handle Midtrans notification with idempotency
- */
 const handleMidtransNotification = async (req, res) => {
     console.log('\n' + '='.repeat(50));
   console.log('🔔 MIDTRANS WEBHOOK RECEIVED');
@@ -29,16 +26,13 @@ const handleMidtransNotification = async (req, res) => {
   
   let t;
   try {
-    // LOG 1: Cek apakah models berhasil di-load
     console.log('🔍 Checking database models...');
     const models = require('../models');
     console.log('✅ Models loaded successfully');
     console.log('Available models:', Object.keys(models).filter(key => !['sequelize', 'Sequelize'].includes(key)));
     
-    // LOG 2: Cek Transaction model khusus
     console.log('🔍 Transaction model exists?', !!models.Transaction);
     
-    // Mulai transaction database
     t = await sequelize.transaction();
     console.log('✅ Database transaction started');
     
