@@ -1,8 +1,5 @@
 const snap = require('../config/midtrans');
 
-// @desc    Create payment
-// @route   POST /api/payments/create
-// @access  Private
 const createPayment = async (req, res) => {
   try {
     const { planId, amount } = req.body;
@@ -44,9 +41,6 @@ const createPayment = async (req, res) => {
   }
 };
 
-// @desc    Handle Midtrans webhook
-// @route   POST /api/webhooks/midtrans
-// @access  Public
 const handleWebhook = async (req, res) => {
   try {
     const { order_id, transaction_status, gross_amount } = req.body;
@@ -56,9 +50,6 @@ const handleWebhook = async (req, res) => {
       transaction_status,
       gross_amount
     });
-    
-    // Here you would update your database
-    // For now, just log it
     const Transaction = require('../models/Transaction');
     const WebhookLog = require('../models/WebhookLog');
     
@@ -67,9 +58,6 @@ const handleWebhook = async (req, res) => {
       payload: req.body,
       status: 'received'
     });
-    
-    // Update transaction status in your database
-    // This is a simplified example
     
     res.status(200).send('OK');
   } catch (error) {
