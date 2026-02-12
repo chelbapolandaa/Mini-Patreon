@@ -2,9 +2,6 @@ const crypto = require('crypto');
 const { Transaction, Subscription, SubscriptionPlan, User } = require('../models');
 const { sequelize } = require('../config/database');
 
-/**
- * Verify Midtrans signature
- */
 const verifySignature = (orderId, statusCode, grossAmount, serverKey) => {
   try {
     const signatureKey = crypto
