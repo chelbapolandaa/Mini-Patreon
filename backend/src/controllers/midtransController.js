@@ -60,7 +60,6 @@ const handleMidtransNotification = async (req, res) => {
       });
     }
     
-    // === SIGNATURE VERIFICATION ===
     if (process.env.MIDTRANS_SERVER_KEY && signature_key) {
       const expectedSignature = verifySignature(
         order_id,
