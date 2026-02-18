@@ -84,7 +84,6 @@ const handleMidtransNotification = async (req, res) => {
       console.warn('⚠️ Skipping signature verification (no server key or signature)');
     }
     
-
     const transaction = await Transaction.findOne({
       where: { midtransOrderId: order_id },
       include: [
@@ -119,7 +118,6 @@ const handleMidtransNotification = async (req, res) => {
       creatorId: transaction.creatorId
     });
     
-    // === UPDATE TRANSACTION ===
     transaction.status = transaction_status;
     transaction.paymentMethod = payment_type;
     transaction.paymentDate = settlement_time || transaction_time;
