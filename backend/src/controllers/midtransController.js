@@ -127,7 +127,6 @@ const handleMidtransNotification = async (req, res) => {
     await transaction.save({ transaction: t });
     console.log(`✅ Transaction updated to: ${transaction_status}`);
     
-    // === HANDLE SUCCESSFUL PAYMENT ===
     if (transaction_status === 'capture' || transaction_status === 'settlement') {
       if (fraud_status === 'accept') {
         try {
