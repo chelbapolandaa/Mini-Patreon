@@ -154,7 +154,6 @@ const handleMidtransNotification = async (req, res) => {
             if (activeSubscription) {
               console.log('ℹ️ User already has active subscription to this creator');
             } else {
-              // Hitung end date berdasarkan interval
               const startDate = new Date();
               let endDate = new Date(startDate);
               
