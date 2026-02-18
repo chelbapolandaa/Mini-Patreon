@@ -84,7 +84,7 @@ const handleMidtransNotification = async (req, res) => {
       console.warn('⚠️ Skipping signature verification (no server key or signature)');
     }
     
-    // === FIND TRANSACTION ===
+
     const transaction = await Transaction.findOne({
       where: { midtransOrderId: order_id },
       include: [
