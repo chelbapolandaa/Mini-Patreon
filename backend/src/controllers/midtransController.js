@@ -35,7 +35,6 @@ const handleMidtransNotification = async (req, res) => {
     
     const notification = req.body;
     
-    // LOG 3: Cek body notification
     console.log('📦 Notification body:', JSON.stringify(notification, null, 2));
     console.log('📦 Notification keys:', Object.keys(notification));
     
